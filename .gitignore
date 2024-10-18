@@ -1,0 +1,7 @@
+.cache/
+.vscode/
+.direnv/
+build/
+.envrc
+*.exe
+shell.nix
