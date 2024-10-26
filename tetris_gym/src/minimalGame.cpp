@@ -9,8 +9,6 @@ Game::Game() : rng(rd())
 
     gameOver = false;
     usedHold = false;
-    tSpinDetected = false;
-    normalTspin = false;
 
     currentBlock = NextBlock();
 }
@@ -23,8 +21,6 @@ void Game::Reset()
 
     gameOver = false;
     usedHold = false;
-    tSpinDetected = false;
-    normalTspin = false;
     currentBlock.reset();
     holdBlock.reset();
 
@@ -118,42 +114,25 @@ void Game::LockBlock()
 
     stats.droppedBlockCount++;
 
-    //if (tSpinDetected)
-    //    ValidateTSpin();
-
     int clearedLine = board.CheckFullRow();
-    if (clearedLine == 0 && !tSpinDetected)
+    if (clearedLine == 0)
     {
         stats.comboCount = -1;
         return;
     }
-    else if (clearedLine)
-    {
-        stats.comboCount++;
-        stats.clearedLineCount += clearedLine;
-        stats.score += stats.comboCount * 50 * stats.level;
-    }
+
+    stats.comboCount++;
+    stats.clearedLineCount += clearedLine;
+    stats.score += stats.comboCount * 50;
 
     int baseScore = 0;
 
-    if (tSpinDetected)
+    switch (clearedLine)
     {
-        stats.tSpinCount++;
-        switch (clearedLine)
-        {
-            case 0: baseScore = 100 + 300 * normalTspin; break;
-            case 1: baseScore = 200 + 600 * normalTspin; stats.b2bChain++; break;
-            case 2: baseScore = 400 + 800 * normalTspin; stats.b2bChain++; break;
-            case 3: baseScore = 1600; stats.b2bChain++; break;
-        }
-    } else {
-        switch (clearedLine)
-        {
-            case 1: baseScore = 100; stats.b2bChain = -1; break;
-            case 2: baseScore = 300; stats.b2bChain = -1; break;
-            case 3: baseScore = 500; stats.b2bChain = -1; break;
-            case 4: baseScore = 800; stats.tetrisCount++; stats.b2bChain++; break;
-        }
+        case 1: baseScore = 100; stats.b2bChain = -1; break;
+        case 2: baseScore = 300; stats.b2bChain = -1; break;
+        case 3: baseScore = 500; stats.b2bChain = -1; break;
+        case 4: baseScore = 800; stats.tetrisCount++; stats.b2bChain++; break;
     }
 
     
@@ -173,10 +152,7 @@ void Game::LockBlock()
         }
     }
 
-    stats.score += baseScore * stats.level;
-
-    tSpinDetected = false;
-    normalTspin = false;
+    stats.score += baseScore;
 }
 
 bool Game::CheckValidPos(int offsetX, int offsetY)

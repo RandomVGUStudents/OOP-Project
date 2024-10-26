@@ -5,7 +5,7 @@ from rl_zoo3.train import train
 def main():
     sys.argv = [
         "python",
-        "-algo", "ppo",
+        "--algo", "ppo",
         "--env", "w/TetrisEnv",
         "-c", "hyperparams.yml",
         "-tb", "./tetris_tensorboard/",

@@ -12,15 +12,12 @@
 
 struct GameStats
 {
-    float timeElapsed = 0;
     int droppedBlockCount = 0;
     int clearedLineCount = 0;
-    int tSpinCount = 0;
     int tetrisCount = 0;
     int fullClearCount = 0;
     int comboCount = -1;
     int b2bChain = -1;
-    int level = 1;
     int score = 0;
 };
 
@@ -43,8 +40,6 @@ public:
     GameStats stats;
 private:
     bool gameOver;
-    bool tSpinDetected;
-    bool normalTspin;
 
     random_device rd;
     mt19937 rng;

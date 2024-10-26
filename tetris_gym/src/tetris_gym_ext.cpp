@@ -76,7 +76,6 @@ public:
     }
 };
 
-
 NB_MODULE(tetris_gym_ext, m)
 {
     nb::class_<Tetris>(m, "Tetris")
