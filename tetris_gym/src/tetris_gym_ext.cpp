@@ -1,8 +1,7 @@
 #include <iostream>
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
-#include "board.hpp"
-#include "minimalGame.hpp"
+#include "game.hpp"
 
 namespace nb = nanobind;
 class Tetris
@@ -17,52 +16,38 @@ public:
     {
         auto& board = game.board.GetBoard();
 
-        std::array<array<uint8_t, BOARD_HEIGHT - 2>, BOARD_WIDTH> board_data;
+        std::array<array<uint8_t, BOARD_HEIGHT>, BOARD_WIDTH> board_data;
         for (size_t i = 0; i < BOARD_WIDTH; ++i) {
-            for (size_t j = 2; j < BOARD_HEIGHT; ++j) {
-                board_data[i][j - 2] = (board[i][j] == EMPTY) ? 0 : 1;
+            for (size_t j = 0; j < BOARD_HEIGHT; ++j) {
+                board_data[i][j] = (board[i][j] == EMPTY) ? 0 : 1;
             }
         }
 
-        // Create nb::ndarray for the board
-        nb::ndarray<uint8_t, nb::numpy, nb::shape<10, 20>, nb::device::cpu> board_array(board_data.data());
+        for (const Coord& coord : this->game.currentBlock->GetCoords())
+            board_data[coord.x][coord.y] = 1;
 
-        // Create nb::ndarray for the queue
-        std::array<uint8_t, 5> queue_data;
-        for (size_t i = 0; i < 5; ++i) {
+        nb::ndarray<uint8_t, nb::numpy, nb::shape<10, 22>, nb::device::cpu> board_array(board_data.data());
+
+        std::array<uint8_t, 6> queue_data;
+        queue_data[0] = this->game.currentBlock->GetType();
+        for (size_t i = 1; i < 6; ++i) {
             queue_data[i] = this->game.currentBag[i].GetType();
         }
-        nb::ndarray<uint8_t, nb::numpy, nb::shape<5>, nb::device::cpu> queue_array(queue_data.data());
+        nb::ndarray<uint8_t, nb::numpy, nb::shape<6>, nb::device::cpu> queue_array(queue_data.data());
 
-        uint8_t currentBlock = this->game.currentBlock ? this->game.currentBlock->GetType() : EMPTY;
         uint8_t holdBlock = this->game.holdBlock ? this->game.holdBlock->GetType() : EMPTY;
 
         return nb::make_tuple(
             board_array,
             queue_array,
-            currentBlock,
             holdBlock
         );
     }
 
-    nb::tuple step(nb::dict action)
+    nb::tuple step(int action)
     {
-        int reward = 0;
-        bool useHold = nb::cast<bool>(action["use_hold"]);
-
-        if (useHold)
-        {
-            if (this->game.usedHold)
-                reward = -1000;
-            this->game.HoldBlock();
-        }
-        else
-        {
-            int col = nb::cast<int>(action["col"]);
-            RotateState rotation = static_cast<RotateState>(nb::cast<int>(action["rotation"]));
-
-            reward = this->game.PlaceBlock(col, rotation);
-        }
+        Action a = static_cast<Action>(action);
+        int reward = this->game.Update(a);
 
         bool done = this->game.IsGameOver();
         nb::dict info;
@@ -72,6 +57,7 @@ public:
 
     void reset()
     {
+        this->game.board.Reset();
         this->game.Reset();
     }
 };

@@ -7,6 +7,13 @@ Board::Board()
             board[i][j] = EMPTY;
 }
 
+void Board::Reset()
+{
+    for (int i = 0; i < BOARD_WIDTH; ++i)
+        for (int j = 0; j < BOARD_HEIGHT; ++j)
+            board[i][j] = EMPTY;
+}
+
 void Board::LockBlock(const Block& block)
 {
     const BlockType type = block.GetType();

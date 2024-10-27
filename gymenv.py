@@ -14,11 +14,11 @@ class ModernTetrisGymEnv(gym.Env):
         super().__init__()
         self.env = Tetris()
         self.observation_space = spaces.Dict({
-            "board": spaces.Box(0, 1, (10, 20), np.uint8),
+            "board": spaces.Box(0, 1, (10, 22), np.uint8),
             "queue": spaces.Box(0, 6, (6,), np.uint8),
             "hold": spaces.Box(0, 7, (1,), np.uint8),
         })
-        self.action_space = spaces.Discrete(41)
+        self.action_space = spaces.Discrete(9)
         self.render_mode = render_mode
         self.episode_length = 0
         self.max_steps = max_steps
@@ -27,23 +27,21 @@ class ModernTetrisGymEnv(gym.Env):
         state = self.env.getState()
         obs = {
             "board": state[0],
-            "queue": np.insert(state[1], 0, state[2]),
-            "hold": np.array([state[3]], dtype=np.uint8)
+            "queue": state[1],
+            "hold": np.array([state[2]], dtype=np.uint8)
         }
         return obs
 
     def step(self, action):
         self.episode_length += 1
-        action_dict = {
-            'use_hold': action == 40,
-            'col': (action % 10 - 1) if action != 40 else None,
-            'rotation': (action // 10) if action != 40 else None
-        } 
 
-        reward, done, info = self.env.step(action_dict)
+        reward, done, info = self.env.step(action)
 
-        truncated = self.episode_length >= self.max_steps
         info['episode_length'] = self.episode_length
+
+        truncated = False
+        if self.episode_length >= self.max_steps:
+            truncated = True
 
         if done or truncated:
             info["final_episode_length"] = self.episode_length

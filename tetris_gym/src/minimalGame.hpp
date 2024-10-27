@@ -30,23 +30,20 @@ public:
 
     void HoldBlock();
     int PlaceBlock(int col, RotateState rotateState);
-    bool IsGameOver();
 
     Board board;
     deque<Block> currentBag;
     optional<Block> currentBlock;
-    optional<Block> holdBlock;
-    bool usedHold;
     GameStats stats;
-private:
     bool gameOver;
+private:
 
     random_device rd;
     mt19937 rng;
 
     //Internal
     void GenerateBag(deque<Block> &bag);
-    Block NextBlock();
+    void NextBlock();
     void LockBlock();
 
     int GetHardDropPos();

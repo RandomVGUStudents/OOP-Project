@@ -1,16 +1,13 @@
 #include "minimalGame.hpp"
 
-static float frametime = 0;
-
 Game::Game() : rng(rd())
 {
     GenerateBag(currentBag); // Generate this bag
     GenerateBag(currentBag); // Generate next bag
 
     gameOver = false;
-    usedHold = false;
 
-    currentBlock = NextBlock();
+    NextBlock();
 }
 
 void Game::Reset()
@@ -20,25 +17,9 @@ void Game::Reset()
     GenerateBag(currentBag); // Generate next bag
 
     gameOver = false;
-    usedHold = false;
     currentBlock.reset();
-    holdBlock.reset();
 
-    currentBlock = NextBlock();
-}
-
-void Game::HoldBlock()
-{
-    if (usedHold)
-        return;
-
-    if (holdBlock)
-        currentBag.push_front(*holdBlock);
-
-    holdBlock.emplace(currentBlock->GetType());
-    currentBlock.reset();
-    currentBlock = NextBlock();
-    usedHold = true;
+    NextBlock();
 }
 
 int Game::GetHardDropPos()
@@ -68,17 +49,12 @@ int Game::PlaceBlock(int col, RotateState rotateState)
         currentBlock->Move(0, droppedLine);
 
         LockBlock();
-        currentBlock = NextBlock();
+        NextBlock();
 
         reward = stats.score - reward;
     }
 
     return reward;
-}
-
-bool Game::IsGameOver()
-{
-    return gameOver;
 }
 
 void Game::GenerateBag(deque<Block> &bag)
@@ -91,26 +67,20 @@ void Game::GenerateBag(deque<Block> &bag)
     bag.insert(bag.end(), make_move_iterator(newBag.begin()), make_move_iterator(newBag.end()));
 }
 
-Block Game::NextBlock()
+void Game::NextBlock()
 {
-    Block nextBlock = std::move(currentBag.front());
+    currentBlock = std::move(currentBag.front());
     currentBag.pop_front();
 
     if (currentBag.size() == BAG_SIZE)
         GenerateBag(currentBag);
-
-    if (!CheckValidPos(0, 0))
-        gameOver = true;
-
-    return std::move(nextBlock);
 }
 
 void Game::LockBlock()
 {
     board.LockBlock(*currentBlock);
-
     currentBlock.reset();
-    usedHold = false;
+    NextBlock();
 
     stats.droppedBlockCount++;
 

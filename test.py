@@ -9,7 +9,7 @@ env = gym.make("w/TetrisEnv", render_mode="human")
 #print(env.reset())
 env.reset()
 #print(env.step(env.action_space.sample()))
-env.step(env.action_space.sample())
-env.step(env.action_space.sample())
+for i in range(10):
+    env.step(env.action_space.sample())
 
 #env.step([0, 0, 0, 0])

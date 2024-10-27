@@ -56,8 +56,8 @@ nanobind_add_module(
   src/block.cpp
   src/board.hpp
   src/board.cpp
-  src/minimalGame.hpp
-  src/minimalGame.cpp
+  src/game.hpp
+  src/game.cpp
   src/tetris_gym_ext.cpp
 )
 

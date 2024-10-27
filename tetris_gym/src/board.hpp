@@ -11,6 +11,7 @@ class Board
 public:
     Board();
 
+    void Reset();
     void LockBlock(const Block& block);
 
     int CheckFullRow();
