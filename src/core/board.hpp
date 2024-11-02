@@ -18,8 +18,10 @@ public:
     bool CheckFit(int offsetX, int offsetY, const Block& block) const;
     BlockType GetCell(int posX, int posY)                       const;
 
+    array<array<BlockType, BOARD_HEIGHT>, BOARD_WIDTH>& GetBoard();
+
 private:
-    BlockType board[BOARD_WIDTH][BOARD_HEIGHT];
+    array<array<BlockType, BOARD_HEIGHT>, BOARD_WIDTH> board;
 
     void ClearRow(int startRow);
     void MoveRowDown(int row);

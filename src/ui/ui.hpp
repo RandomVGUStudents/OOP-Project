@@ -1,13 +1,10 @@
 #ifndef UI_HPP
 #define UI_HPP
 
-#include <array>
-#include <deque>
 #include <format>
-#include <optional>
 #include <string>
-#include "../include/raylib-cpp.hpp"
-#include "board.hpp"
+#include "../../include/raylib-cpp.hpp"
+#include "../core/tetris.hpp"
 #include "animation.hpp"
 
 
@@ -55,6 +52,12 @@ static CounterConfig presetBlitz = {{ FULLCLEARCOUNT, LEVEL, LINECOUNT, TIME, SC
 enum { T_SPIN_MSG, CLEAR_MSG, B2B_MSG, COMBO_MSG, FC_MSG };
 
 
+// Game config, may be moved somewhere else
+static const float CFG_ARR = 0.005;
+static const float CFG_DAS = 0.102;
+static const float CFG_GRAVITY = 0.8;
+static const int CFG_SDF = 50;
+
 struct GameStats
 {
     float timeElapsed = 0;
@@ -70,29 +73,77 @@ struct GameStats
     int score = 0;
 };
 
-class GameRenderer
+static float frametime = 0;
+
+class TetrisUI : public TetrisCore
 {
 public:
-    GameRenderer(GameStats& stats);
+    TetrisUI();
+
+    void Update();
+
+protected:
+    float gravity;
+
+    // Internal stats
+    float lineDropTimer;
+    float lockDownTimer;
+    int lockDownMove;
+    bool touchedDown;
+    bool tSpinDetected;
+    bool isNormalTspin;
+    GameStats stats;
+
+    // Event-based messages
+    array<float, 5> messagesTimer;
+    array<string, 4> messagesData;
+    void InvokeClearMsg(const int clearedLine);
+    void InvokeTSpinMsg();
+    void InvokeB2BMsg();
+    void InvokeComboMsg();
+    void InvokeFullClearMsg();
+
+    // User input
+    void HandleInput();
+    void Rotate(RotateState direction);
+    void MoveLeftRight(bool leftPressed, bool rightPressed);
+    void HardDrop();
+    void SoftDrop();
+    void Hold();
+
+    void LockDownReset();
+    void LockBlock();
+    void CalculateScore();
+
+    void ValidateTSpin();
+    void MoveVertical(int lines);
+    void MoveHorizontal(bool left, int col);
+    bool TryRotateBlock(RotateState currentState, RotateState newState, const Coord& offset);
+
+    template <size_t N>
+    bool TryRotateOpposite(RotateState currentState, RotateState newState, 
+                           const array<array<Coord, N>, 4>& srsData);
+};
+
+
+class TetrisRenderer : public TetrisUI
+{
+public:
+    TetrisRenderer();
+
+    void Draw();
 
     // Functions to be called in Draw() loop
     void UpdateScreenSize(); // Run when resizing window
-    void DrawHoldBox(const optional<Block>& holdBlock);
-    void DrawQueueColumn(const deque<Block>& currentBag);
-    void DrawBoard(const Board& board, const Block& currentBlock, int hardDropPos);
+    void DrawHoldBox();
+    void DrawQueueColumn();
+    void DrawBoard();
     void DrawStats();
-    void DrawMessages(const float frametime);
+    void DrawMessages();
 
     // Invoking event-based messages
-    void InvokeClearMsg(const int clearedLine);
-    void InvokeTSpinMsg(const bool normalTspin);
-    void InvokeB2BMsg(const int b2bChain);
-    void InvokeComboMsg(const int comboCount);
-    void InvokeFullClearMsg();
 
 private:
-    const GameStats& gameStats;
-
     int screenWidth;
     int screenHeight;
     float aspectRatio;
@@ -112,8 +163,6 @@ private:
 
     array<array<raylib::Vector2, 2>, STAT_SLOT_COUNT> statSlotCoords;
     array<raylib::Vector2, 4> messagesCoords;
-    array<float, 5> messagesTimer;
-    array<string, 4> messagesData;
     array<raylib::Vector2, BLOCK_TYPES> blockSizes;
     array<raylib::Rectangle, BLOCK_TYPES + 1> textureCoords;
 
@@ -121,7 +170,7 @@ private:
     void CalculateElements();
 
     // Helper functions to draw statistics
-    array<void (GameRenderer::*)(int), STAT_TYPES> DrawStatsFunctions;
+    array<void (TetrisRenderer::*)(int), STAT_TYPES> DrawStatsFunctions;
     void DrawLevel(int slotNumber);
     void DrawScore(int slotNumber);
     void DrawTime(int slotNumber);

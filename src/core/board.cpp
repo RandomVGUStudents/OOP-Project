@@ -2,8 +2,8 @@
 
 Board::Board()
 {
-    for (int i = 0; i < BOARD_WIDTH; ++i)
-        for (int j = 0; j < BOARD_HEIGHT; ++j)
+    for (size_t i = 0; i < BOARD_WIDTH; ++i)
+        for (size_t j = 0; j < BOARD_HEIGHT; ++j)
             board[i][j] = EMPTY;
 }
 
@@ -17,13 +17,13 @@ void Board::LockBlock(const Block& block)
 
 int Board::CheckFullRow()
 {
-    int count = 0;
+    size_t count = 0;
 
-    for (int i = 0; i < BOARD_HEIGHT; ++i)
+    for (size_t i = 0; i < BOARD_HEIGHT; ++i)
     {
         bool fullRow = true;
 
-        for (int j = 0; j < BOARD_WIDTH; ++j)
+        for (size_t j = 0; j < BOARD_WIDTH; ++j)
             if (board[j][i] == EMPTY)
             {
                 fullRow = false;
@@ -43,8 +43,8 @@ int Board::CheckFullRow()
 
 bool Board::CheckFullClear() const
 {
-    for (int i = 0; i < BOARD_WIDTH; ++i)
-        for (int j = 0; j < BOARD_HEIGHT; ++j)
+    for (size_t i = 0; i < BOARD_WIDTH; ++i)
+        for (size_t j = 0; j < BOARD_HEIGHT; ++j)
             if (board[i][j] != EMPTY)
                 return false;
 
@@ -73,13 +73,19 @@ BlockType Board::GetCell(int posX, int posY) const
 
 void Board::ClearRow(int row)
 {
-    for (int i = 0; i < BOARD_WIDTH; ++i)
+    for (size_t i = 0; i < BOARD_WIDTH; ++i)
         board[i][row] = EMPTY;
+}
+
+
+array<array<BlockType, BOARD_HEIGHT>, BOARD_WIDTH>& Board::GetBoard()
+{
+    return board;
 }
 
 void Board::MoveRowDown(int row)
 {
-    for (int i = 0; i < BOARD_WIDTH; ++i)
+    for (size_t i = 0; i < BOARD_WIDTH; ++i)
         for (int j = row - 1; j >= 0; --j)
         {
             board[i][j + 1] = board[i][j];

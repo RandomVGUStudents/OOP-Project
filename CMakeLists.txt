@@ -13,12 +13,11 @@ find_package(raylib REQUIRED)
 
 # List all source files
 set(SOURCES
-  #src/animation.cpp
-    src/block.cpp
-    src/board.cpp
-    src/game.cpp
+    src/core/block.cpp
+    src/core/board.cpp
+    src/core/tetris.cpp
+    src/ui/ui.cpp
     src/main.cpp
-    src/ui.cpp
 )
 
 # Add the executable

@@ -1,4 +1,4 @@
-#include "game.hpp"
+#include "ui/ui.hpp"
 
 raylib::Window gameWindow(1920, 1080, "Tetr.io Clone");
 raylib::Texture minoTexture("./sprite.png");
@@ -13,14 +13,14 @@ int main()
     font.GetTexture().GenMipmaps();
     font.GetTexture().SetFilter(TEXTURE_FILTER_BILINEAR);
 
-    Game game;
+    TetrisRenderer tetrisGame;
 
     while (!gameWindow.ShouldClose())
     {
         gameWindow.BeginDrawing();
         gameWindow.ClearBackground();
-        game.Update();
-        game.Draw();
+        tetrisGame.Update();
+        tetrisGame.Draw();
         gameWindow.EndDrawing();
     }
 

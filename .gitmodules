@@ -1,0 +1,3 @@
+[submodule "include/nanobind"]
+	path = include/nanobind
+	url = https://github.com/wjakob/nanobind
