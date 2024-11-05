@@ -1,15 +1,15 @@
 #include "tetris.hpp"
+#include "core/common.hpp"
 #include <iostream>
-
-static float frametime = 0;
 
 TetrisCore::TetrisCore() : rng(rd())
 {
-    GenerateBag(); // Generate this bag
-    GenerateBag(); // Generate next bag
+    NewGame();
+}
 
-    usedHold = false;
-    gameOver = false;
+const bool TetrisCore::IsOver()
+{
+    return gameOver;
 }
 
 void TetrisCore::HoldBlock()
@@ -18,31 +18,29 @@ void TetrisCore::HoldBlock()
         return;
 
     if (holdBlock)
-        currentBag.push_front(*holdBlock);
+        currentBag.push_front(holdBlock.GetType());
 
-    holdBlock.emplace(currentBlock->GetType());
-    currentBlock.reset();
+    currentBlock.ResetPosition();
+    holdBlock = std::move(currentBlock);
+    NextBlock();
+
     usedHold = true;
 }
 
 void TetrisCore::GenerateBag()
 {
-    array<Block, BAG_SIZE> newBag = {
-        Block(I), Block(J), Block(L), Block(O), Block(S), Block(T), Block(Z)
-    };
-    shuffle(newBag.begin(), newBag.end(), rng);
+    std::array<int, BAG_SIZE> vec = {0, 1, 2, 3, 4, 5, 6};
+    std::shuffle(vec.begin(), vec.end(), rng);
 
-    currentBag.insert(
-        currentBag.end(),
-        make_move_iterator(newBag.begin()),
-        make_move_iterator(newBag.end())
-    );
+    for (int num : vec)
+        currentBag.push_back(BlockType(num));
 }
 
 void TetrisCore::NextBlock()
 {
-    currentBlock = std::move(currentBag.front());
-    currentBlock->Move(currentBlock->GetType() == O ? 4 : 3, 0);
+    auto& type = currentBag.front();
+    currentBlock = std::move(Block(type));
+    currentBlock.Move(type == O ? 4 : 3, 0);
 
     currentBag.pop_front();
     if (currentBag.size() == BAG_SIZE)
@@ -51,19 +49,43 @@ void TetrisCore::NextBlock()
 
 void TetrisCore::UpdateBoard()
 {
-    board.LockBlock(*currentBlock);
-    currentBlock.reset();
+    board.LockBlock(currentBlock);
+    NextBlock();
+
+    for (size_t i = 0; i < BOARD_WIDTH; ++i)
+        if (board.GetBoard()[i][2] != EMPTY)
+        {
+            gameOver = true;
+            break;
+        }
+
     usedHold = false;
+}
+
+void TetrisCore::NewGame()
+{
+    currentBag.clear();
+    holdBlock = Block();
+    board.Init();
+
+    GenerateBag();
+    GenerateBag();
+
+    usedHold = false;
+    gameOver = false;
+    stats = GameStats();
+
+    NextBlock();
 }
 
 bool TetrisCore::CheckValidPos(int offsetX, int offsetY)
 {
-    return board.CheckFit(offsetX, offsetY, *currentBlock);
+    return board.CheckFit(offsetX, offsetY, currentBlock);
 }
 
 int TetrisCore::GetHardDropPos()
 {
     int i = 0;
     while (CheckValidPos(0, i++));
-    return i;
+    return i - BOARD_HEIGHT + 20;
 }

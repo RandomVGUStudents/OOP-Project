@@ -1,12 +1,5 @@
 #include "board.hpp"
 
-Board::Board()
-{
-    for (size_t i = 0; i < BOARD_WIDTH; ++i)
-        for (size_t j = 0; j < BOARD_HEIGHT; ++j)
-            board[i][j] = EMPTY;
-}
-
 void Board::LockBlock(const Block& block)
 {
     const BlockType type = block.GetType();
@@ -71,22 +64,28 @@ BlockType Board::GetCell(int posX, int posY) const
     return board[posX][posY];
 }
 
-void Board::ClearRow(int row)
+void Board::Init()
 {
     for (size_t i = 0; i < BOARD_WIDTH; ++i)
-        board[i][row] = EMPTY;
+        for (size_t j = 0; j < BOARD_HEIGHT; ++j)
+            board[i][j] = EMPTY;
 }
-
 
 array<array<BlockType, BOARD_HEIGHT>, BOARD_WIDTH>& Board::GetBoard()
 {
     return board;
 }
 
+void Board::ClearRow(int row)
+{
+    for (size_t i = 0; i < BOARD_WIDTH; ++i)
+        board[i][row] = EMPTY;
+}
+
 void Board::MoveRowDown(int row)
 {
     for (size_t i = 0; i < BOARD_WIDTH; ++i)
-        for (int j = row - 1; j >= 0; --j)
+        for (size_t j = row - 1; j >= 2; --j)
         {
             board[i][j + 1] = board[i][j];
             board[i][j] = EMPTY;

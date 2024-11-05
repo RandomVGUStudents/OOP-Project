@@ -1,15 +1,13 @@
 #ifndef BOARD_HPP
 #define BOARD_HPP
 
-#define BOARD_WIDTH 10
-#define BOARD_HEIGHT 22
-
 #include "block.hpp"
 
 class Board
 {
 public:
-    Board();
+    Board() {};
+    void Init();
 
     void LockBlock(const Block& block);
 
@@ -23,7 +21,7 @@ public:
 private:
     array<array<BlockType, BOARD_HEIGHT>, BOARD_WIDTH> board;
 
-    void ClearRow(int startRow);
+    void ClearRow(int row);
     void MoveRowDown(int row);
 };
 

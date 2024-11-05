@@ -6,7 +6,7 @@ project(Tetris)
 # Specify the C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20 -g")
 
 # Find the raylib package
 find_package(raylib REQUIRED)
@@ -17,7 +17,12 @@ set(SOURCES
     src/core/board.cpp
     src/core/tetris.cpp
     src/ui/ui.cpp
-    src/main.cpp
+    src/ui/renderer.cpp
+    src/ai/env.cpp
+    src/ai/heuristics.cpp
+    src/ai/genetic.cpp
+    src/trainHeur.cpp
+    #src/main.cpp
 )
 
 # Add the executable

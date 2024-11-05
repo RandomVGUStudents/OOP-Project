@@ -2,15 +2,7 @@
 #define BLOCK_HPP
 
 #include <array>
-
-using namespace std;
-
-#define TETROMINO_SIZE 4
-#define ROTATION_STATES 4
-#define BLOCK_TYPES 7
-
-enum BlockType {I, J, L, O, S, T, Z, EMPTY};
-enum RotateState {INITIAL, LEFT, DOWN, RIGHT};
+#include "common.hpp"
 
 struct Coord
 {
@@ -125,12 +117,19 @@ public:
         , posX(0)
         , posY(0)
         , rotateState(INITIAL)
-        , coords(blockData.at(type).at(INITIAL)) {};
+        , coords(blockData[type][INITIAL]) {};
+    Block(Block& block);
+    Block(Block&& block) noexcept;
+
+    Block& operator=(const Block& block);
+    Block& operator=(const Block&& block) noexcept;
+    bool operator==(const BlockType& type) const noexcept;
+    explicit operator bool() const noexcept;
 
     void Rotate(RotateState s);
     void Move(int x, int y);
 
-    void HoldReset();
+    void ResetPosition();
     BlockType GetType()                             const;
     RotateState GetRotation()                       const;
     void GetPosition(int& posX, int& posY)          const;
