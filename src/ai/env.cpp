@@ -1,5 +1,4 @@
 #include "env.hpp"
-#include "core/common.hpp"
 
 void TetrisEnv::CalcHeuristics()
 {
@@ -118,7 +117,8 @@ int TetrisEnv::CalcScore()
     if (board.CheckFullClear())
     {
         stats.fullClearCount++;
-        switch (clearedLine) {
+        switch (clearedLine)
+        {
             case 1: baseScore += 800; break;
             case 2: baseScore += 1200; break;
             case 3: baseScore += 1800; break;
@@ -146,7 +146,8 @@ int TetrisEnv::CalcReward()
 
 void TetrisEnv::ParseMove(const BlockType currentType, int i, RotateState& tryRotation, int& tryPosX)
 {
-    switch (currentType) { // Hardcode brrr
+    switch (currentType)
+    { // Hardcode brrr
         case I:
             if (i < 7)
             {

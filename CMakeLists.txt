@@ -18,11 +18,11 @@ set(SOURCES
     src/core/tetris.cpp
     src/ui/ui.cpp
     src/ui/renderer.cpp
+    src/ui/cli.cpp
     src/ai/env.cpp
     src/ai/heuristics.cpp
     src/ai/genetic.cpp
-    src/trainHeur.cpp
-    #src/main.cpp
+    src/main.cpp
 )
 
 # Add the executable

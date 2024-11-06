@@ -16,7 +16,8 @@ constexpr float easeOutCubic(float t)
 constexpr std::array<float, ANIMATION_SAMPLES> bakeAnimation()
 {
     std::array<float, ANIMATION_SAMPLES> data = {};
-    for (int i = 0; i < ANIMATION_SAMPLES; ++i) {
+    for (size_t i = 0; i < ANIMATION_SAMPLES; ++i)
+    {
         float time = i * TIME_STEP;
         data[i] = easeOutCubic(time);
     }

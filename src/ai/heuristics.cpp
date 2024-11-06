@@ -1,4 +1,9 @@
 #include "heuristics.hpp"
+#include <iostream>
+
+TetrisHeurAI::TetrisHeurAI()
+    : renderer(stats, {{ SCORE, TIME, LINESPEED, BLOCKCOUNT, CUSTOM }})
+{};
 
 void TetrisHeurAI::Update()
 {
@@ -23,18 +28,21 @@ void TetrisHeurAI::Update()
     currentBlock.ResetPosition();
     MakeMove(rotation, posX);
     stats.droppedBlockCount++;
+
+    auto now = chrono::steady_clock::now();
+    stats.timeElapsed = now - stats.startTime;
 }
 
-void TetrisHeurAI::Draw()
+void TetrisHeurAI::Draw(const string& customTitle, const string& customData, const string& customSubData)
 {
-    stats.timeElapsed += gameWindow.GetFrameTime();
-
     renderer.UpdateScreenSize();
     renderer.DrawHoldBox(holdBlock);
     renderer.DrawQueueColumn(currentBag);
     renderer.DrawBoard(currentBlock, GetHardDropPos(), board);
     renderer.DrawStats();
     renderer.DrawMessages();
+    if (customTitle != "")
+        renderer.DrawCustomStats(4, customTitle, customData, customSubData);
 }
 
 void TetrisHeurAI::UpdateHeuristics(HeuristicsWeights newWeights)

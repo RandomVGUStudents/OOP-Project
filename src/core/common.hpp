@@ -1,7 +1,9 @@
 #ifndef COMMON_HPP
 #define COMMON_HPP
 
+#include <chrono>
 using namespace std;
+
 constexpr int TETROMINO_SIZE = 4;
 
 constexpr int BOARD_WIDTH = 10;
@@ -15,9 +17,11 @@ enum BlockType {I, J, L, O, S, T, Z, EMPTY};
 constexpr int ROTATION_STATES = 4;
 enum RotateState {INITIAL, LEFT, DOWN, RIGHT};
 
+
 struct GameStats
 {
-    float timeElapsed = 0;
+    chrono::duration<double> timeElapsed;
+    chrono::steady_clock::time_point startTime = chrono::steady_clock::now();
     int droppedBlockCount = 0;
     int clearedLineCount = 0;
     int tSpinCount = 0;

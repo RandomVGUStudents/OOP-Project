@@ -11,11 +11,8 @@ TetrisRenderer::TetrisRenderer(GameStats& gameStats, CounterConfig config)
     : stats(gameStats)
     , screenWidth(0)
     , screenHeight(0)
-    , aspectRatio(0)
-    , scaleX(0)
-    , scaleY(0)
     , fontSize(0)
-    , slotConfig(config) // Temporarily
+    , slotConfig(config)
 {
     messagesData.fill("");
     messagesTimer.fill(0);
@@ -43,25 +40,16 @@ void TetrisRenderer::UpdateScreenSize()
     screenWidth = gameWindow.GetRenderWidth();
     screenHeight = gameWindow.GetRenderHeight();
 
-    aspectRatio = 1.0 * screenWidth / screenHeight;
-    scaleX = 1.0;
-    scaleY = 1.0;
-
-    if (aspectRatio > TARGET_ASPECT_RATIO) {
-        scaleX = aspectRatio / TARGET_ASPECT_RATIO;
-    } else if (aspectRatio < TARGET_ASPECT_RATIO) {
-        scaleY = TARGET_ASPECT_RATIO / aspectRatio;
-    }
-
     CalculateElements();
 }
 
 void TetrisRenderer::CalculateElements()
 {
     canvas.SetSize(
-        (CANVAS_WIDTH * screenWidth) / scaleX,
-        (CANVAS_HEIGHT * screenHeight) / scaleY
+        CANVAS_SIZE * min(screenWidth, screenHeight),
+        CANVAS_SIZE * min(screenWidth, screenHeight)
     );
+
     canvas.SetPosition(
         (screenWidth - canvas.GetWidth()) / 2,
         (screenHeight - canvas.GetHeight()) / 2
@@ -98,7 +86,8 @@ void TetrisRenderer::CalculateElements()
 
     for (size_t i = 0; i < BLOCK_TYPES; ++i)
     {
-        switch (i) {
+        switch (i)
+        {
             case I:
                 blockSizes[i].SetX(4);
                 blockSizes[i].SetY(3);
@@ -172,8 +161,7 @@ void TetrisRenderer::InvokeClearMsg(int clearedLine)
 void TetrisRenderer::InvokeTSpinMsg(const bool isNormalTspin)
 {
     string msg = "t-spin";
-    if (!isNormalTspin)
-        msg = "mini " + msg;
+    if (!isNormalTspin) msg = "mini " + msg;
 
     messagesTimer[T_SPIN_MSG] = ANIMATION_DURATION;
     messagesData[T_SPIN_MSG] = msg;
@@ -201,8 +189,7 @@ void TetrisRenderer::DrawHoldBox(Block& holdBlock)
     holdBox.Draw(BLACK);
     holdBox.DrawLines(RAYWHITE, 2.0);
 
-    if (!holdBlock)
-        return;
+    if (!holdBlock) return;
 
     const BlockType type = holdBlock.GetType();
 
@@ -225,7 +212,7 @@ void TetrisRenderer::DrawQueueColumn(deque<BlockType>& currentBag)
     queueColumn.Draw(BLACK);
     queueColumn.DrawLines(RAYWHITE, 2.0);
 
-    for (int i = 0; i < 5; ++i)
+    for (size_t i = 0; i < 5; ++i)
     {
         const BlockType type = currentBag.at(i);
         for (const Coord& coord : Block(currentBag.at(i)).GetCoords())
@@ -267,8 +254,8 @@ void TetrisRenderer::DrawBoard(Block& currentBlock, int hardDropPos, Board& boar
         minoTexture.Draw(textureCoords[type], mino);
     }
 
-    for (int i = 0; i < BOARD_WIDTH; ++i)
-        for (int j = LINE_OFFSET; j < BOARD_HEIGHT; ++j)
+    for (size_t i = 0; i < BOARD_WIDTH; ++i)
+        for (size_t j = LINE_OFFSET; j < BOARD_HEIGHT; ++j)
         {
             j -= LINE_OFFSET;
 
@@ -281,8 +268,7 @@ void TetrisRenderer::DrawBoard(Block& currentBlock, int hardDropPos, Board& boar
 
             mino.DrawLines(DARKGRAY, 1.0);
             type = board.GetCell(i, j);
-            if (type != EMPTY)
-                minoTexture.Draw(textureCoords[type], mino);
+            if (type != EMPTY) minoTexture.Draw(textureCoords[type], mino);
         }
 
     canvas.GetPosition().Add(holdBox.GetSize()).DrawLine(bottomLeft, 2.0, RAYWHITE);
@@ -293,14 +279,12 @@ void TetrisRenderer::DrawBoard(Block& currentBlock, int hardDropPos, Board& boar
 void TetrisRenderer::DrawStats()
 {
     for (size_t i = 0; i < STAT_SLOT_COUNT; ++i)
-        if (slotConfig[i] != NONE)
+        if (slotConfig[i] != NONE && slotConfig[i] != CUSTOM)
             (this->*DrawStatsFunctions[slotConfig[i]])(i);
 }
 
-void TetrisRenderer::DrawStatSlot(int slotNumber, const string& slotText, const string& slotSubText)
+void TetrisRenderer::DrawCustomStats(int slotNumber, const string& slotTitle, const string& slotText, const string& slotSubText)
 {
-    const string slotTitle = textDisplay[slotConfig[slotNumber]];
-
     raylib::Vector2 titleSize = font.MeasureText(slotTitle, fontSize, 1.0);
     raylib::Vector2 titlePosition = statSlotCoords[slotNumber][0];
 
@@ -314,8 +298,7 @@ void TetrisRenderer::DrawStatSlot(int slotNumber, const string& slotText, const 
         font.DrawText(slotTitle, titlePosition, fontSize, 1.0, RAYWHITE);
         font.DrawText(slotText, textPosition, bigFontSize, 1.0, RAYWHITE);
 
-        if (slotSubText.empty())
-            return;
+        if (slotSubText.empty()) return;
 
         raylib::Vector2 subTextPos(textPosition.Add(textSize));
         subTextPos.SetY(subTextPos.GetY() - fontSize);
@@ -335,6 +318,12 @@ void TetrisRenderer::DrawStatSlot(int slotNumber, const string& slotText, const 
     font.DrawText(slotText, textPosition, textSize, 0, bigFontSize, 1.0, RAYWHITE);
 }
 
+void TetrisRenderer::DrawStatSlot(int slotNumber, const string& slotText, const string& slotSubText)
+{
+    const string slotTitle = textDisplay[slotConfig[slotNumber]];
+    DrawCustomStats(slotNumber, slotTitle, slotText, slotSubText);
+}
+
 void TetrisRenderer::DrawMessages()
 {
     static raylib::Color color;
@@ -345,12 +334,12 @@ void TetrisRenderer::DrawMessages()
 
     for (size_t i = 0; i < 5; ++i)
     {
-        if (messagesTimer[i] <= 0)
-            continue;
+        if (messagesTimer[i] <= 0) continue;
 
         messagesTimer[i] -= gameWindow.GetFrameTime();
 
-        switch (i) {
+        switch (i)
+        {
             case T_SPIN_MSG:
                 useBigFont = false;
                 color = raylib::Color(162, 65, 155);
@@ -432,18 +421,21 @@ void TetrisRenderer::DrawScore(int slotNumber)
 
 void TetrisRenderer::DrawTime(int slotNumber)
 {
-    int minutes = static_cast<int>(stats.timeElapsed) / 60;
-    int seconds = static_cast<int>(stats.timeElapsed) % 60;
+    auto duration = stats.timeElapsed;
 
-    double fractionalSeconds = stats.timeElapsed - static_cast<int>(stats.timeElapsed);
-    int milliseconds = static_cast<int>(fractionalSeconds * 1000);
+    int minutes = static_cast<int>(std::chrono::duration_cast<std::chrono::minutes>(duration).count());
+    duration -= std::chrono::minutes(minutes);
 
+    int seconds = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(duration).count());
+    duration -= std::chrono::seconds(seconds);
+
+    int milliseconds = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
     DrawStatSlot(slotNumber, format("{}:{:02d}", minutes, seconds), format(" .{:03d}", milliseconds));
 }
 
 void TetrisRenderer::DrawLineSpeed(int slotNumber)
 {
-    float lps = stats.clearedLineCount / stats.timeElapsed;
+    float lps = stats.clearedLineCount / stats.timeElapsed.count();
     DrawStatSlot(slotNumber, format("{}, ", stats.clearedLineCount), format("{:.2f}/s", lps));
 }
 
@@ -454,15 +446,14 @@ void TetrisRenderer::DrawLineCount(int slotNumber)
 
 void TetrisRenderer::DrawPieces(int slotNumber)
 {
-    float pps = stats.droppedBlockCount / stats.timeElapsed;
+    float pps = stats.droppedBlockCount / stats.timeElapsed.count();
     DrawStatSlot(slotNumber, format("{}, ", stats.droppedBlockCount), format("{:.2f}/s", pps));
 }
 
 void TetrisRenderer::DrawInputs(int slotNumber)
 {
     float ips = 0;
-    if (stats.droppedBlockCount)
-        ips = 1.0 * stats.keyPressed / stats.droppedBlockCount;
+    if (stats.droppedBlockCount) ips = 1.0 * stats.keyPressed / stats.droppedBlockCount;
     DrawStatSlot(slotNumber, format("{}, ", stats.keyPressed), format("{:.2f}/p", ips));
 }
 

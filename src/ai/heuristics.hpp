@@ -1,15 +1,20 @@
 #ifndef HEURISTICS_HPP
 #define HEURISTICS_HPP
 
+#include <chrono>
+#include <fstream>
+#include "ui/renderer.hpp"
 #include "env.hpp"
+
+constexpr string DATAFILE = "data.bin";
 
 class TetrisHeurAI : public TetrisEnv
 {
 public:
-    TetrisHeurAI() : renderer(stats, {{ SCORE, TIME, LINESPEED, BLOCKCOUNT, NONE }}) {};
+    TetrisHeurAI();
 
     void Update();
-    void Draw();
+    void Draw(const string& customTitle="", const string& customData="", const string& customSubData="");
     void UpdateHeuristics(HeuristicsWeights newWeights);
 
 protected:

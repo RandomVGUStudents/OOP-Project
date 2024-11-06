@@ -1,6 +1,5 @@
 #include "tetris.hpp"
 #include "core/common.hpp"
-#include <iostream>
 
 TetrisCore::TetrisCore() : rng(rd())
 {

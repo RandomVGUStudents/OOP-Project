@@ -1,17 +1,17 @@
 #include "ui.hpp"
-static float frametime = 0;
 
-TetrisUI::TetrisUI() : renderer(stats)
-{
-    gravity = CFG_GRAVITY;
+static float frametime = 0.0;
 
-    lineDropTimer = 0;
-    touchedDown = false;
-    lockDownMove = 0;
-    lockDownTimer = 0;
-    tSpinDetected = false;
-    isNormalTspin = false;
-}
+TetrisUI::TetrisUI()
+    : renderer(stats)
+    , gravity(CFG_GRAVITY)
+    , lineDropTimer(0)
+    , touchedDown(false)
+    , lockDownMove(0)
+    , lockDownTimer(0)
+    , tSpinDetected(false)
+    , isNormalTspin(false)
+{}
 
 void TetrisUI::Update()
 {
@@ -28,7 +28,8 @@ void TetrisUI::Update()
         }
     }
 
-    stats.timeElapsed += frametime;
+    auto now = chrono::steady_clock::now();
+    stats.timeElapsed = now - stats.startTime;
     lineDropTimer += frametime;
 
     if (lineDropTimer >= gravity)
@@ -209,6 +210,9 @@ void TetrisUI::LockDownReset()
 
 void TetrisUI::LockBlock()
 {
+    if (tSpinDetected)
+        ValidateTSpin();
+
     UpdateBoard();
 
     touchedDown = false;
@@ -216,9 +220,6 @@ void TetrisUI::LockBlock()
     lockDownTimer = 0;
 
     stats.droppedBlockCount++;
-
-    if (tSpinDetected)
-        ValidateTSpin();
 
     int clearedLine = board.CheckFullRow();
     if (clearedLine == 0 && !tSpinDetected)

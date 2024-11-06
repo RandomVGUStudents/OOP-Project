@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <array>
 #include "core/tetris.hpp"
-#include "ui/ui.hpp"
 
 constexpr array<int, BLOCK_TYPES + 1> placePositions = {{
     7 + 10,      // I piece: 7 horizontal pos, 10 vertical pos, 2 rotations
@@ -30,17 +29,17 @@ struct BoardHeuristics
 
 struct HeuristicsWeights
 {
-    float holeCount = -1;
-    float aggrHeight = -1;
-    float maxHeight = -1;
-    float bumpiness = -1;
-    float rowTransition = -1;
-    float colTransition = -1;
-    float multiWell = -1;
-    float wellDepth = 1;
-    float gameScore = 1;
+    double holeCount = -1;
+    double aggrHeight = -1;
+    double maxHeight = -1;
+    double bumpiness = -1;
+    double rowTransition = -1;
+    double colTransition = -1;
+    double multiWell = -1;
+    double wellDepth = 1;
+    double gameScore = 1;
 
-    array<float*, 9> asArray()
+    array<double*, 9> asArray()
     {
         return {{
             &holeCount,
@@ -56,7 +55,6 @@ struct HeuristicsWeights
     }
 };
 
-//class TetrisEnv : public TetrisUI
 class TetrisEnv : public TetrisCore
 {
 public:
@@ -66,7 +64,7 @@ protected:
     BoardHeuristics heuristics;
     HeuristicsWeights weights;
 
-    void CalcHeuristics(); // hole, aggrHeight, maxHeight, bumpiness, colTransition, wellSum
+    void CalcHeuristics();
     int CalcScore();
     int CalcReward();
 

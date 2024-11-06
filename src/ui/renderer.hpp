@@ -12,8 +12,7 @@
 
 // UI elements position
 constexpr float TARGET_ASPECT_RATIO = 16.0 / 9.0;
-constexpr float CANVAS_WIDTH = 0.375;
-constexpr float CANVAS_HEIGHT = 0.65;
+constexpr float CANVAS_SIZE = 0.7;
 constexpr float HOLDBOX_WIDTH = 0.25;
 constexpr float HOLDBOX_HEIGHT = 0.2;
 constexpr float QUEUE_COLUMN_WIDTH = 0.25;
@@ -25,11 +24,11 @@ constexpr int LINE_OFFSET = 2;
 
 
 // Types of statistics to display
-constexpr int STAT_TYPES = 9;
+constexpr int STAT_TYPES = 10;
 enum GameStatsDisplay {
     NONE, LEVEL, SCORE, TIME,
     LINESPEED, LINECOUNT, BLOCKCOUNT,
-    KEYPRESSCOUNT, FULLCLEARCOUNT
+    KEYPRESSCOUNT, FULLCLEARCOUNT, CUSTOM
 };
 
 // Corresponding title for each statistics type
@@ -66,6 +65,7 @@ public:
     void DrawQueueColumn(deque<BlockType>& currentBag);
     void DrawBoard(Block& currentBlock, int hardDropPos, Board& board);
     void DrawStats();
+    void DrawCustomStats(int slotNumber, const string& slotTitle, const string& slotText, const string& slobSubText="");
     void DrawMessages();
 
     // Invoking event-based messages
@@ -80,9 +80,6 @@ private:
 
     int screenWidth;
     int screenHeight;
-    float aspectRatio;
-    float scaleX;
-    float scaleY;
     float fontSize;
     float bigFontSize;
     CounterConfig slotConfig;
