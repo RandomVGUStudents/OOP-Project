@@ -41,7 +41,8 @@ constexpr array<string, STAT_TYPES> textDisplay = {{
 constexpr int STAT_SLOT_COUNT = 5;
 typedef array<GameStatsDisplay, STAT_SLOT_COUNT> CounterConfig;
 constexpr CounterConfig preset40Lines = {{ TIME, LINECOUNT, BLOCKCOUNT, KEYPRESSCOUNT, SCORE }};
-constexpr CounterConfig presetBlitz = {{ FULLCLEARCOUNT, LEVEL, LINECOUNT, TIME, SCORE }};
+constexpr CounterConfig presetBlitz = {{ FULLCLEARCOUNT, LEVEL, LINESPEED, TIME, SCORE }};
+constexpr CounterConfig presetZen = {{ BLOCKCOUNT, LEVEL, LINESPEED, TIME, SCORE }};
 
 
 // Types of event-based messages
@@ -59,6 +60,8 @@ class TetrisRenderer
 public:
     TetrisRenderer(GameStats& gameStats, CounterConfig config=preset40Lines);
 
+    void SetConfig(CounterConfig config);
+
     // Functions to be called in Draw() loop
     void UpdateScreenSize(); // Run when resizing window
     void DrawHoldBox(Block& holdBlock);
@@ -67,6 +70,7 @@ public:
     void DrawStats();
     void DrawCustomStats(int slotNumber, const string& slotTitle, const string& slotText, const string& slobSubText="");
     void DrawMessages();
+    void DrawGameOver(Board& board);
 
     // Invoking event-based messages
     void InvokeClearMsg(const int clearedLine);
@@ -97,7 +101,7 @@ private:
     array<float, 5> messagesTimer;
     array<string, 4> messagesData;
     array<raylib::Vector2, BLOCK_TYPES> blockSizes;
-    array<raylib::Rectangle, BLOCK_TYPES + 1> textureCoords;
+    array<raylib::Rectangle, BLOCK_TYPES + 2> textureCoords;
 
     // Responsive to window size
     void CalculateElements();

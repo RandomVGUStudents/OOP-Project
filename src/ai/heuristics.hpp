@@ -16,9 +16,14 @@ public:
     void Update();
     void Draw(const string& customTitle="", const string& customData="", const string& customSubData="");
     void UpdateHeuristics(HeuristicsWeights newWeights);
+    void SetPPS(float pps);
+    
+    void NewGame() override;
 
 protected:
     TetrisRenderer renderer;
+    float pps;
+    int timer;
 
     void FindBestMove(bool& useHold, int& move);
     int SimulateMove(Block& block, RotateState s, int posX);

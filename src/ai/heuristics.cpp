@@ -1,12 +1,25 @@
 #include "heuristics.hpp"
-#include <iostream>
 
 TetrisHeurAI::TetrisHeurAI()
     : renderer(stats, {{ SCORE, TIME, LINESPEED, BLOCKCOUNT, CUSTOM }})
+    , pps(0.0)
+    , timer(0)
 {};
 
 void TetrisHeurAI::Update()
 {
+    auto now = chrono::steady_clock::now();
+    stats.timeElapsed = now - stats.startTime;
+
+    if (pps != 0)
+    {
+        int millisec = static_cast<int>(chrono::duration_cast<chrono::milliseconds>(stats.timeElapsed).count());
+        int timePerPiece = 1000 / pps;
+
+        if (timer >= millisec / timePerPiece) return;
+        else timer++;
+    }
+
     bool useHold = false;
     int move = -1;
 
@@ -28,17 +41,18 @@ void TetrisHeurAI::Update()
     currentBlock.ResetPosition();
     MakeMove(rotation, posX);
     stats.droppedBlockCount++;
-
-    auto now = chrono::steady_clock::now();
-    stats.timeElapsed = now - stats.startTime;
 }
 
 void TetrisHeurAI::Draw(const string& customTitle, const string& customData, const string& customSubData)
 {
     renderer.UpdateScreenSize();
+
     renderer.DrawHoldBox(holdBlock);
     renderer.DrawQueueColumn(currentBag);
-    renderer.DrawBoard(currentBlock, GetHardDropPos(), board);
+
+    if (!gameOver) renderer.DrawBoard(currentBlock, GetHardDropPos(), board);
+    else renderer.DrawGameOver(board);
+
     renderer.DrawStats();
     renderer.DrawMessages();
     if (customTitle != "")
@@ -48,6 +62,17 @@ void TetrisHeurAI::Draw(const string& customTitle, const string& customData, con
 void TetrisHeurAI::UpdateHeuristics(HeuristicsWeights newWeights)
 {
     weights = newWeights;
+}
+
+void TetrisHeurAI::SetPPS(float pps)
+{
+    this->pps = pps;
+}
+
+void TetrisHeurAI::NewGame()
+{
+    TetrisCore::NewGame();
+    timer = 0;
 }
 
 void TetrisHeurAI::FindBestMove(bool& useHold, int& move)

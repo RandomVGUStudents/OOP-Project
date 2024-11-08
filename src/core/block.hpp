@@ -106,6 +106,7 @@ static const array<array<Coord, 2>, ROTATION_STATES> OppositeSrsData = {{
     {{ {0, 0}, { 1,  0} }}  // RIGHT   -> LEFT
 }};
 
+
 class Block
 {
 public:

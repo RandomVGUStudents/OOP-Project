@@ -6,6 +6,7 @@
 #include <random>
 #include "board.hpp"
 
+
 class TetrisCore
 {
 public:
@@ -13,7 +14,7 @@ public:
 
     GameStats stats;
 
-    void NewGame();
+    virtual void NewGame();
     const bool IsOver();
 
 protected:

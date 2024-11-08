@@ -16,7 +16,8 @@ set(SOURCES
     src/core/block.cpp
     src/core/board.cpp
     src/core/tetris.cpp
-    src/ui/ui.cpp
+    src/ui/mainUI.cpp
+    src/ui/tetrisUI.cpp
     src/ui/renderer.cpp
     src/ui/cli.cpp
     src/ai/env.cpp

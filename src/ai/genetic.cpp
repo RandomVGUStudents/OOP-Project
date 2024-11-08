@@ -47,7 +47,8 @@ void Individual::CalculateFitness(
     int index,
     TetrisHeurAI& game,
     function<void(const int)>Start,
-    function<void(const int)>End
+    function<void(const int)>End,
+    bool& quitSignal
 )
 {
     if (fitness != numeric_limits<float>::infinity())
@@ -61,7 +62,7 @@ void Individual::CalculateFitness(
 
     game.UpdateHeuristics(chromosome);
 
-    while (currentTrial < TRIALS_PER_GNOME)
+    while (currentTrial < TRIALS_PER_GNOME && !quitSignal)
     {
         game.Update();
         if (static_cast<int>(game.stats.clearedLineCount) % UPDATE_FREQ == 0)
@@ -80,7 +81,7 @@ void Individual::CalculateFitness(
         }
     }
 
-    fitness = TRIALS_PER_GNOME / (totalLines + totalScore * 0.01);
+    if (!quitSignal) fitness = TRIALS_PER_GNOME / (totalLines + totalScore * 0.01);
     isRunning = false;
     End(index);
 }
@@ -116,32 +117,31 @@ Trainer::Trainer()
 
 void Trainer::StartTraining()
 {
+    quitSignal = false;
     CreateThreadQueue();
 
     int counter = 0;
     while (finishedIndices.size() < POPULATION_SIZE)
     {
-        if (RENDER)
+        if (raylib::Keyboard::IsKeyPressed(KEY_ESCAPE) || gameWindow.ShouldClose())
         {
-            this_thread::sleep_for(chrono::milliseconds(GUI_UPDATE_FREQ));
-            Render();
-            counter++;
-
-            if (counter == GUI_PER_CLI)
-            {
-                Print();
-                counter = 0;
-            }
+            quitSignal = true;
+            for (auto& thread : threads) if (thread.joinable()) thread.join();
+            return;
         }
-        else
+
+        this_thread::sleep_for(chrono::milliseconds(GUI_UPDATE_FREQ));
+        Render();
+        counter++;
+
+        if (counter == GUI_PER_CLI)
         {
-            this_thread::sleep_for(chrono::milliseconds(CLI_UPDATE_FREQ));
             Print();
+            counter = 0;
         }
     }
 
-    for (auto& thread : threads)
-        if (thread.joinable()) thread.join();
+    for (auto& thread : threads) if (thread.joinable()) thread.join();
 
     MatingPress();
     SaveData();
@@ -149,12 +149,22 @@ void Trainer::StartTraining()
 
 bool Trainer::ShouldStop()
 {
-    return bestIndividual.fitness < CONVERGENT_FITNESS || generation >= MAX_GENERATION;
+    bool stopCuzQuitSignal = quitSignal;
+    quitSignal = false;
+    return bestIndividual.fitness < CONVERGENT_FITNESS
+    || generation > maxGeneration
+    || stopCuzQuitSignal;
 }
 
 Individual& Trainer::GetBestIndividual()
 {
     return bestIndividual;
+}
+
+void Trainer::SetConfig(int thread, int generation)
+{
+    numThreads = thread;
+    maxGeneration = generation;
 }
 
 void Trainer::SaveData()
@@ -181,7 +191,7 @@ void Trainer::CreateThreadQueue()
     runningIndices.clear();
     finishedIndices.clear();
 
-    for (size_t i = 0; i < NUM_THREADS; ++i)
+    for (size_t i = 0; i < numThreads; ++i)
         threads.emplace_back(&Trainer::StartFitness, this);
 }
 
@@ -202,7 +212,8 @@ void Trainer::StartFitness()
             index,
             games[index], 
             startSignalFunc,
-            endSignalFunc
+            endSignalFunc,
+            quitSignal
         );
     }
 }
@@ -235,7 +246,7 @@ void Trainer::Print()
     cout << CLEAR_SCREEN;
 
     double overallProgress = (POPULATION_SIZE * generation + finishedIndices.size()) * 100.0 / 
-        (POPULATION_SIZE * MAX_GENERATION);
+        (POPULATION_SIZE * (maxGeneration + 1));
     cout << createBox(
         BOLD + "Overall Training Progress" + RESET,
         CLI_GREEN + createProgressBar(overallProgress) + RESET
@@ -295,8 +306,6 @@ void Trainer::Render()
 
     gameWindow.BeginDrawing();
     gameWindow.ClearBackground();
-
-    if (gameWindow.ShouldClose()) exit(0);
 
     const auto& individual = population[observeIndex];
     games[observeIndex].Draw(

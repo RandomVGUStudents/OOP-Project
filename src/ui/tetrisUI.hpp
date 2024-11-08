@@ -1,14 +1,11 @@
-#ifndef UI_HPP
-#define UI_HPP
+#ifndef TETRIS_UI_HPP
+#define TETRIS_UI_HPP
 
 #include "core/tetris.hpp"
 #include "renderer.hpp"
 
-// Game config, may be moved somewhere else
-constexpr float CFG_ARR = 0.005;
-constexpr float CFG_DAS = 0.102;
-constexpr float CFG_GRAVITY = 0.8;
-constexpr int CFG_SDF = 50;
+enum GameMode { LINES, BLITZ, ZEN };
+
 
 class TetrisUI : public TetrisCore
 {
@@ -17,11 +14,17 @@ public:
 
     void Update();
     void Draw();
+    void SetConfig(float cfgArr, float cfgDas, float cfgSdf, float cfgGravity);
+    void SetMode(GameMode mode);
 
 protected:
     TetrisRenderer renderer;
 
+    GameMode gameMode;
     float gravity;
+    float cfgArr;
+    float cfgDas;
+    float cfgSdf;
 
     // Internal stats
     float lineDropTimer;
@@ -53,4 +56,4 @@ protected:
                            const array<array<Coord, N>, 4>& srsData);
 };
 
-#endif /* UI_HPP */
+#endif /* TETRIS_UI_HPP */

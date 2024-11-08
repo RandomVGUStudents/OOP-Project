@@ -32,6 +32,11 @@ TetrisRenderer::TetrisRenderer(GameStats& gameStats, CounterConfig config)
     UpdateScreenSize();
 }
 
+void TetrisRenderer::SetConfig(CounterConfig config)
+{
+    slotConfig = config;
+}
+
 void TetrisRenderer::UpdateScreenSize()
 {
     if (screenWidth == gameWindow.GetRenderWidth() && screenHeight == gameWindow.GetRenderHeight())
@@ -110,6 +115,9 @@ void TetrisRenderer::CalculateElements()
     }
     textureCoords[BLOCK_TYPES].SetSize(96, 96);
     textureCoords[BLOCK_TYPES].SetPosition(96 * BLOCK_TYPES, 0);
+
+    textureCoords[BLOCK_TYPES + 1].SetSize(96, 96);
+    textureCoords[BLOCK_TYPES + 1].SetPosition(96 * BLOCK_TYPES + 96, 0);
 
     float textPadding = canvas.GetWidth() * TEXT_PADDING; 
     float leftXPos = holdBox.GetX() + holdBox.GetWidth() - textPadding;
@@ -409,6 +417,30 @@ void TetrisRenderer::DrawMessages()
     }
 }
 
+void TetrisRenderer::DrawGameOver(Board& board)
+{
+    for (size_t i = 0; i < BOARD_WIDTH; ++i)
+        for (size_t j = LINE_OFFSET; j < BOARD_HEIGHT; ++j)
+        {
+            j -= LINE_OFFSET;
+
+            mino.SetPosition(
+                holdBox.GetWidth() + canvas.GetX() + i * mino.GetWidth(),
+                canvas.GetY() + j * mino.GetHeight()
+            );
+
+            j += LINE_OFFSET;
+
+            mino.DrawLines(DARKGRAY, 1.0);
+            if (board.GetCell(i, j) != EMPTY) minoTexture.Draw(textureCoords[EMPTY + 1], mino);
+        }
+
+    messagesTimer[T_SPIN_MSG] = ANIMATION_DURATION;
+    messagesData[T_SPIN_MSG] = "press r to restart";
+    messagesTimer[CLEAR_MSG] = ANIMATION_DURATION;
+    messagesData[CLEAR_MSG] = "GAME OVER";
+}
+
 void TetrisRenderer::DrawLevel(int slotNumber)
 {
     DrawStatSlot(slotNumber, format("{}", stats.level));
@@ -423,13 +455,13 @@ void TetrisRenderer::DrawTime(int slotNumber)
 {
     auto duration = stats.timeElapsed;
 
-    int minutes = static_cast<int>(std::chrono::duration_cast<std::chrono::minutes>(duration).count());
-    duration -= std::chrono::minutes(minutes);
+    int minutes = static_cast<int>(chrono::duration_cast<chrono::minutes>(duration).count());
+    duration -= chrono::minutes(minutes);
 
-    int seconds = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(duration).count());
-    duration -= std::chrono::seconds(seconds);
+    int seconds = static_cast<int>(chrono::duration_cast<chrono::seconds>(duration).count());
+    duration -= chrono::seconds(seconds);
 
-    int milliseconds = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
+    int milliseconds = static_cast<int>(chrono::duration_cast<chrono::milliseconds>(duration).count());
     DrawStatSlot(slotNumber, format("{}:{:02d}", minutes, seconds), format(" .{:03d}", milliseconds));
 }
 
