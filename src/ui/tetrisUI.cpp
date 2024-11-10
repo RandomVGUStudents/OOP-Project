@@ -205,14 +205,14 @@ void TetrisUI::SoftDrop()
 {
     lineDropTimer += frametime * (cfgSdf - 1);
 
-    if (lineDropTimer / gravity >= 20)
+    if (lineDropTimer >= 20 / gravity)
     {
         int droppedLine = GetHardDropPos();
 
         stats.score += 1 * droppedLine * stats.level;
         MoveVertical(droppedLine);
+        lineDropTimer = 0;
     }
-    else if (lineDropTimer >= gravity) stats.score += floor(lineDropTimer / gravity);
 }
 
 void TetrisUI::HoldBlock()
