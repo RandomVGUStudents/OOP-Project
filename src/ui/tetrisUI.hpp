@@ -16,6 +16,7 @@ public:
     void Draw();
     void SetConfig(float cfgArr, float cfgDas, float cfgSdf, float cfgGravity);
     void SetMode(GameMode mode);
+    void NewGame() override;
 
 protected:
     TetrisRenderer renderer;
@@ -41,7 +42,6 @@ protected:
     void HardDrop();
     void SoftDrop();
     void HoldBlock() override;
-    void Reset();
 
     void LockDownReset();
     virtual void LockBlock();

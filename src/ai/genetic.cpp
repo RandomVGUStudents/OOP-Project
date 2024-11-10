@@ -279,9 +279,9 @@ void Trainer::Print()
             << "Trial " << setw(10) 
             << (to_string(trial) + "/" + to_string(TRIALS_PER_GNOME))
             << "Lines: " << setw(10) 
-            << static_cast<int>(individual.totalLines + individual.currentLines)
+            << static_cast<int>(individual.totalLines)
             << "Score: " 
-            << static_cast<int>(individual.totalScore + individual.currentScore)
+            << static_cast<int>(individual.totalScore)
             << endl;
 
         cout << string(50, '-') << endl;

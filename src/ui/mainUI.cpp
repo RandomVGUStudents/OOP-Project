@@ -214,7 +214,7 @@ void App::CalculateElements()
                 break;
 
             case GRAVITY:
-                p1Slider.push_back(std::move(Slider(1.0, 20.0)));
+                p1Slider.push_back(std::move(Slider(1.0 / 60, 1.0)));
                 break;
         }
 

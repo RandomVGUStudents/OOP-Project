@@ -24,7 +24,7 @@ void TetrisUI::Update()
         else
         {
             lockDownTimer += frametime;
-            if (lockDownMove >= 15 || lockDownTimer > 5) LockBlock();
+            if (lockDownMove >= 15 || lockDownTimer > 0.5) LockBlock();
         }
     }
 
@@ -36,11 +36,10 @@ void TetrisUI::Update()
 
     lineDropTimer += frametime;
 
-    if (lineDropTimer >= gravity)
+    if (lineDropTimer >= 1 / gravity)
     {
-        int moveDown = floor(lineDropTimer / gravity);
-        MoveVertical(moveDown);
-        lineDropTimer -= moveDown * gravity;
+        MoveVertical(1);
+        lineDropTimer -= 1 / gravity;
     }
 }
 
@@ -57,12 +56,11 @@ void TetrisUI::Draw()
     
     renderer.DrawStats();
     renderer.DrawMessages();
-
 }
 
 void TetrisUI::SetConfig(float arr, float das, float sdf, float cfgGravity)
 {
-    gravity = cfgGravity;
+    gravity = cfgGravity * 60;
     cfgArr = arr / 60;
     cfgDas = das / 60;
     cfgSdf = sdf;
@@ -89,7 +87,7 @@ void TetrisUI::SetMode(GameMode mode)
 
 void TetrisUI::HandleInput()
 {
-    if (raylib::Keyboard::IsKeyPressed(KEY_R)) Reset();
+    if (raylib::Keyboard::IsKeyPressed(KEY_R)) NewGame();
 
     if (gameOver) return;
 
@@ -223,9 +221,9 @@ void TetrisUI::HoldBlock()
     stats.keyPressed++;
 }
 
-void TetrisUI::Reset()
+void TetrisUI::NewGame()
 {
-    NewGame();
+    TetrisCore::NewGame();
 
     lineDropTimer = 0;
     touchedDown = false;
