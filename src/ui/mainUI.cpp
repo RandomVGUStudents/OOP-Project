@@ -385,6 +385,7 @@ void App::PlayPage()
                 if (cfgSdf == 40.0) cfgSdf = numeric_limits<float>::infinity();
                 tetrisGame.SetConfig(cfgArr, cfgDas, cfgSdf, cfgGravity);
                 tetrisGame.SetMode((GameMode)i);
+                tetrisGame.NewGame();
             }
 }
 
@@ -444,6 +445,7 @@ void App::WatchPage()
 
                 tetrisAI.SetPPS(pps == 20.0 ? 0 : pps);
                 tetrisAI.UpdateHeuristics(trainer.GetBestIndividual().chromosome);
+                tetrisAI.NewGame();
             }
 }
 

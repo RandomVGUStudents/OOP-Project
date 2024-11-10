@@ -3,65 +3,77 @@
 void TetrisEnv::CalcHeuristics()
 {
     heuristics = BoardHeuristics();
-    int lastLineHeight = 0;
+    int lastColHeight = 0;
 
     for (size_t i = 0; i < BOARD_WIDTH; ++i)                                                                                                           
     {                                                                                                                                                  
-        bool blockFound = false;                                                                                                                       
-        bool cell = false;
+        bool foundFirstFilledCell = false;                                                                                                                       
+        bool prevCell = false;
+        int colHeight = 0;
+        int wellDepth = 0;
 
+        // Scanning from top to bottom, excluding first 2 rows where pieces spawn
         for (size_t j = 2; j < BOARD_HEIGHT; ++j)                                                                                                      
         {
-            bool cellFilled = board.GetCell(i, j) != EMPTY; 
-            if (cellFilled && !blockFound)
+            bool cellIsFilled = board.GetCell(i, j) != EMPTY; 
+
+            // Encounter a filled cell for the first time
+            if (cellIsFilled && !foundFirstFilledCell)
             {
-                blockFound = true;                                                                                                                     
-                int lineHeight = BOARD_HEIGHT - j;
-                if (i == 0)
-                    lastLineHeight = lineHeight;
+                foundFirstFilledCell = true;                                                                                                                     
+                colHeight = BOARD_HEIGHT - j;
 
-                heuristics.aggrHeight += lineHeight;
-                heuristics.maxHeight = max(lineHeight, heuristics.maxHeight);
-                heuristics.bumpiness += abs(lineHeight - lastLineHeight);
+                if (i == 0) lastColHeight = colHeight;
 
-                lastLineHeight = lineHeight;
+                heuristics.aggrHeight += colHeight;
+                heuristics.maxHeight = max(colHeight, heuristics.maxHeight);
+                heuristics.bumpiness += abs(colHeight - lastColHeight);
+
+                lastColHeight = colHeight;
             }
-            else if (!cellFilled && blockFound)                                                                                                                       
+
+            // Encounter a blank cell below a filled cell
+            // 1. A hole
+            // 2. If the cell right above is also filled, a column transition
+            else if (!cellIsFilled && foundFirstFilledCell)                                                                                                                       
             {
                 heuristics.holeCount++;                                                                                                                               
-                if (cell)
+                if (prevCell)
                 {
                     heuristics.colTransition++;
-                    cell = cellFilled;
+                    prevCell = cellIsFilled;
                 }
             }
-            else if (cellFilled && blockFound && !cell)
+
+            // Encounter a filled cell, not the first filled one in the column
+            // and the cell above is blank, a column transition
+            else if (cellIsFilled && foundFirstFilledCell && !prevCell)
             {
                 heuristics.colTransition++;
-                cell = cellFilled;
-            }
-            else if (j == BOARD_HEIGHT - 1)
-            {
-                heuristics.bumpiness += lastLineHeight;
-                lastLineHeight = 0;
+                prevCell = cellIsFilled;
             }
 
-            cell = cellFilled;
+            // Reached the bottom while no flag is set, a whole empty column
+            else if (j == BOARD_HEIGHT - 1)
+            {
+                heuristics.bumpiness += lastColHeight;
+                lastColHeight = 0;
+            }
+
+            prevCell = cellIsFilled;
         }
 
         // Check for a well
         Block wellTester;
         bool isWell = false;
-        int wellDepth = 0;
-        int wellRows = BOARD_HEIGHT - lastLineHeight - wellDepth - 1;
+        int wellRows = BOARD_HEIGHT - lastColHeight - wellDepth - 1;
 
         while (board.CheckFit(int(i), wellRows, wellTester)
             && !board.CheckFit(int(i) - 1, wellRows, wellTester)
             && !board.CheckFit(int(i) + 1, wellRows, wellTester))
         {
-            if (++wellDepth >= 3)
-                isWell = true;
-            wellRows = BOARD_HEIGHT - lastLineHeight - wellDepth - 1;
+            if (++wellDepth >= 3) isWell = true;
+            wellRows = BOARD_HEIGHT - lastColHeight - wellDepth - 1;
         }
 
         if (isWell)
@@ -74,14 +86,14 @@ void TetrisEnv::CalcHeuristics()
     // Row transition
     for (size_t i = BOARD_HEIGHT - heuristics.maxHeight; i < BOARD_HEIGHT; ++i)
     {
-        bool cell = board.GetCell(0, i) == EMPTY; 
+        bool prevCell = board.GetCell(0, i) != EMPTY; 
         for (size_t j = 1; j < BOARD_WIDTH; ++j)
         {
-            bool thisCell = board.GetCell(j, i) == EMPTY;
-            if (cell != thisCell)
+            bool thisCell = board.GetCell(j, i) != EMPTY;
+            if (prevCell != thisCell)
             {
                 heuristics.rowTransition++;
-                cell = thisCell;
+                prevCell = thisCell;
             }
         }
     }
@@ -130,7 +142,7 @@ int TetrisEnv::CalcScore()
     return stats.score - lastScore;
 }
 
-int TetrisEnv::CalcReward()
+double TetrisEnv::CalcReward()
 {
     CalcHeuristics();
     return weights.holeCount * heuristics.holeCount
@@ -142,76 +154,6 @@ int TetrisEnv::CalcReward()
     + weights.wellDepth * heuristics.wellDepth
     + weights.multiWell * heuristics.additionalWell
     + weights.gameScore * CalcScore();
-}
-
-void TetrisEnv::ParseMove(const BlockType currentType, int i, RotateState& tryRotation, int& tryPosX)
-{
-    switch (currentType)
-    { // Hardcode brrr
-        case I:
-            if (i < 7)
-            {
-                tryRotation = INITIAL;
-                tryPosX = i;
-            }
-            else
-            {
-                tryRotation = LEFT;
-                tryPosX = i - 7 - 1; // Offsetting I piece in the second row of its grid
-            }
-            break;
-
-        case J:
-        case L:
-        case T:
-            if (i < 17)
-            {
-                if (i < 8)
-                {
-                    tryRotation = INITIAL;
-                    tryPosX = i;
-                }
-                else
-                {
-                    tryRotation = LEFT;
-                    tryPosX = i - 8;
-                }
-            }
-            else
-            {
-                if (i < 25)
-                {
-                    tryRotation = DOWN;
-                    tryPosX = i - 17;
-                }
-                else
-                {
-                    tryRotation = RIGHT;
-                    tryPosX = i - 25 - 1;
-                }
-            }
-            break;
-
-        case O:
-            tryRotation = INITIAL;
-            tryPosX = i;
-            break;
-
-        case S:
-        case Z:
-            if (i < 8)
-            {
-                tryRotation = INITIAL;
-                tryPosX = i;
-            }
-            else
-            {
-                tryRotation = LEFT;
-                tryPosX = i - 8;
-            }
-            break;
-
-    }
 }
 
 void TetrisEnv::MakeMove(RotateState s, int posX)

@@ -1,52 +1,13 @@
 #include "block.hpp"
 
-Block::Block(Block& block)
-{
-    blockType = block.blockType;
-    rotateState = block.rotateState;
-    posX = block.posX;
-    posY = block.posY;
-    coords = block.coords;
-}
-
-Block::Block(Block&& block) noexcept
-{
-    blockType = std::move(block.blockType);
-    rotateState = std::move(block.rotateState);
-    posX = std::move(block.posX);
-    posY = std::move(block.posY);
-    coords = std::move(block.coords);
-}
-
-Block& Block::operator=(const Block& block)
-{
-    if (this != &block)
-    {
-        blockType = block.blockType;
-        posX = block.posX;
-        posY = block.posY;
-        rotateState = block.rotateState;
-        coords = block.coords;
-    }
-    return *this;
-}
-
-Block& Block::operator=(const Block&& block) noexcept
-{
-    if (this != &block)
-    {
-        blockType = std::move(block.blockType);
-        rotateState = std::move(block.rotateState);
-        posX = std::move(block.posX);
-        posY = std::move(block.posY);
-        coords = std::move(block.coords);
-    }
-    return *this;
-}
-
 bool Block::operator==(const BlockType& type) const noexcept
 {
     return blockType == type;
+}
+
+bool Block::operator==(const Block& block) const noexcept
+{
+    return blockType == block.blockType;
 }
 
 Block::operator bool() const noexcept

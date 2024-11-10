@@ -120,7 +120,7 @@ void TetrisUI::Rotate(RotateState direction)
 {
     stats.keyPressed++;
     bool rotateCW = (direction == RIGHT);
-    bool tBlock = (currentBlock.GetType() == T);
+    bool tBlock = (currentBlock == T);
     RotateState currentState = currentBlock.GetRotation();
     RotateState newState = static_cast<RotateState>((currentState + direction) % 4);
 
@@ -136,7 +136,7 @@ void TetrisUI::Rotate(RotateState direction)
     }
 
     size_t testIndex = -1;
-    const auto& kickTable = currentBlock.GetType() == I ? IsrsData : srsData;
+    const auto& kickTable = currentBlock == I ? IsrsData : srsData;
     for (const Coord& offset : kickTable.at(currentState * 2 + rotateCW).offsets)
     {
         testIndex++;

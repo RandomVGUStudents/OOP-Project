@@ -22,7 +22,6 @@ constexpr float TOP_N_PARENTS = POPULATION_SIZE * 0.4;
 constexpr float MUTATION_RATE = 3e-2;
 constexpr double CONVERGENT_FITNESS = 1e-6;
 
-constexpr int UPDATE_FREQ = 1e3;
 constexpr int GUI_UPDATE_FREQ = 50; // milliseconds
 constexpr int CLI_UPDATE_FREQ = 200; // milliseconds
 constexpr int GUI_PER_CLI = CLI_UPDATE_FREQ / GUI_UPDATE_FREQ;
@@ -44,8 +43,6 @@ public:
     int currentTrial = 0;
     double totalLines = 0.0;
     double totalScore = 0.0;
-    double currentLines = 0.0;
-    double currentScore = 0.0;
     bool isRunning = false;
 
     double fitness = numeric_limits<float>::infinity();

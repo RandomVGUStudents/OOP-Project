@@ -4,6 +4,10 @@ TetrisHeurAI::TetrisHeurAI()
     : renderer(stats, {{ SCORE, TIME, LINESPEED, BLOCKCOUNT, CUSTOM }})
     , pps(0.0)
     , timer(0)
+    , cacheExists(false)
+    , cachedReward(0.0)
+    , cachedMove(0)
+    , cachedRotation(INITIAL)
 {};
 
 void TetrisHeurAI::Update()
@@ -20,26 +24,21 @@ void TetrisHeurAI::Update()
         else timer++;
     }
 
+    GameStats origStats = stats;
     bool useHold = false;
     int move = -1;
-
-    GameStats origStats = stats;
+    RotateState rotation = INITIAL;
 
     currentBlock.ResetPosition();
-    FindBestMove(useHold, move);
+    FindBestMove(useHold, move, rotation);
 
     stats = origStats;
 
     if (useHold)
         HoldBlock();
 
-    RotateState rotation = INITIAL;
-    int posX = 0;
-
-    ParseMove(currentBlock.GetType(), move, rotation, posX);
-
     currentBlock.ResetPosition();
-    MakeMove(rotation, posX);
+    MakeMove(rotation, move);
     stats.droppedBlockCount++;
 }
 
@@ -75,12 +74,14 @@ void TetrisHeurAI::NewGame()
     timer = 0;
 }
 
-void TetrisHeurAI::FindBestMove(bool& useHold, int& move)
+void TetrisHeurAI::FindBestMove(bool& useHold, int& bestMove, RotateState& bestRotation)
 {
-    int bestRewardNoHold = -INFINITY;
-    int bestRewardHold = -INFINITY;
+    double bestRewardNoHold = -numeric_limits<float>::infinity();
+    double bestRewardHold = -numeric_limits<float>::infinity();
     int bestMoveNoHold = -1;
     int bestMoveHold = -1;
+    RotateState bestRotationNoHold = INITIAL;
+    RotateState bestRotationHold = INITIAL;
 
     // Case 1: No held piece.
     // -> Current piece + next piece < next piece + 2nd next piece ? hold : normal
@@ -95,28 +96,47 @@ void TetrisHeurAI::FindBestMove(bool& useHold, int& move)
     
     if (!holdBlock)
     {
-        TryMoves(currentBlock, nextBlock, bestRewardNoHold, bestMoveNoHold);
-        TryMoves(nextBlock, secondNextBlock, bestRewardHold, bestMoveHold);
+        // 2 piece lookahead, so it may become redundant => Pull from cached result
+        if (cacheExists)
+        {
+            bestRewardNoHold = cachedReward;
+            bestMoveNoHold = cachedMove;
+            bestRotationNoHold = cachedRotation;
+        }
+        else TryMoves(currentBlock, nextBlock, bestRewardNoHold, bestMoveNoHold, bestRotationNoHold);
+
+        if (nextBlock != secondNextBlock)
+        {
+            TryMoves(nextBlock, secondNextBlock, bestRewardHold, bestMoveHold, bestRotationHold);
+            
+            cacheExists = true;
+            cachedReward = bestRewardHold;
+            cachedMove = bestMoveHold;
+            cachedRotation = bestRotationHold;
+        }
     }
     else
     {
-        TryMoves(currentBlock, nextBlock, bestRewardNoHold, bestMoveNoHold);
-        TryMoves(holdBlock, nextBlock, bestRewardHold, bestMoveHold);
+        TryMoves(currentBlock, nextBlock, bestRewardNoHold, bestMoveNoHold, bestRotationNoHold);
+        if (currentBlock != holdBlock)
+            TryMoves(holdBlock, nextBlock, bestRewardHold, bestMoveHold, bestRotationHold);
     }
 
     if (bestRewardNoHold > bestRewardHold)
     {
         useHold = false;
-        move = bestMoveNoHold;
+        bestMove = bestMoveNoHold;
+        bestRotation = bestRotationNoHold;
     }
     else
     {
         useHold = true;
-        move = bestMoveHold;
+        bestMove = bestMoveHold;
+        bestRotation = bestRotationHold;
     }
 }
 
-int TetrisHeurAI::SimulateMove(Block& block, RotateState s, int posX)
+double TetrisHeurAI::SimulateMove(Block& block, RotateState s, int posX)
 {
     block.Rotate(s);
     block.Move(posX, 0);
@@ -133,43 +153,51 @@ int TetrisHeurAI::SimulateMove(Block& block, RotateState s, int posX)
     return CalcReward();
 }
 
-void TetrisHeurAI::TryMoves(Block& firstBlock, Block& secondBlock, int& bestReward, int& bestMove)
+void TetrisHeurAI::TryMoves(Block& firstBlock, Block& secondBlock, double& bestReward, int& bestMove, RotateState& bestRotation)
 {
     BlockType firstType = firstBlock.GetType();
     BlockType secondType = secondBlock.GetType();
 
-    RotateState tryRotation = INITIAL;
-    int tryPosX = 0;
-
-    int reward = -INFINITY;
+    double reward = -numeric_limits<float>::infinity();
     int move = -1;
+    RotateState rotation = INITIAL;
 
-    for (size_t i = 0; i < placePositions[firstType]; ++i)
+    for (size_t i = 0; i < uniqueRotations[firstType]; ++i)
     {
+        const RotateState tryRotation = (RotateState)i;
         Board orig1 = board;
-        ParseMove(firstType, i, tryRotation, tryPosX);
-        int firstReward = SimulateMove(firstBlock, tryRotation, tryPosX);
 
-        for (size_t j = 0; j < placePositions[secondType]; ++j)
+        for (const auto& tryPosX : ParseMove(firstType, tryRotation))
         {
-            Board orig2 = board;
-            ParseMove(secondType, j, tryRotation, tryPosX);
-            int secondReward = SimulateMove(secondBlock, tryRotation, tryPosX);
+            double firstReward = SimulateMove(firstBlock, tryRotation, tryPosX);
 
-            if (firstReward + secondReward > reward)
+            for (size_t j = 0; j < uniqueRotations[secondType]; ++j)
             {
-                reward = firstReward + secondReward;
-                move = i;
+                const RotateState tryRotation2 = (RotateState)i;
+                Board orig2 = board;
+
+                for (const auto& tryPosX2 : ParseMove(secondType, tryRotation2))
+                {
+                    double secondReward = SimulateMove(secondBlock, tryRotation2, tryPosX2);
+
+                    if (firstReward + secondReward > reward)
+                    {
+                        reward = firstReward + secondReward;
+                        move = tryPosX;
+                        rotation = tryRotation;
+                    }
+
+                    board = orig2;
+                    secondBlock.ResetPosition();
+                }
             }
 
-            board = orig2;
-            secondBlock.ResetPosition();
+            board = orig1;
+            firstBlock.ResetPosition();
         }
-
-        board = orig1;
-        firstBlock.ResetPosition();
     }
 
     bestReward = reward;
     bestMove = move;
+    bestRotation = rotation;
 }

@@ -65,11 +65,6 @@ void Individual::CalculateFitness(
     while (currentTrial < TRIALS_PER_GNOME && !quitSignal)
     {
         game.Update();
-        if (static_cast<int>(game.stats.clearedLineCount) % UPDATE_FREQ == 0)
-        {
-            currentLines = game.stats.clearedLineCount;
-            currentScore = game.stats.score;
-        }
 
         if (game.IsOver() || game.stats.clearedLineCount > MAX_LINES_PER_TRIAL)
         {

@@ -119,12 +119,9 @@ public:
         , posY(0)
         , rotateState(INITIAL)
         , coords(blockData[type][INITIAL]) {};
-    Block(Block& block);
-    Block(Block&& block) noexcept;
 
-    Block& operator=(const Block& block);
-    Block& operator=(const Block&& block) noexcept;
     bool operator==(const BlockType& type) const noexcept;
+    bool operator==(const Block& block) const noexcept;
     explicit operator bool() const noexcept;
 
     void Rotate(RotateState s);

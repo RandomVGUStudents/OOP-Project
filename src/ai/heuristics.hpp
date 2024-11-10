@@ -25,9 +25,15 @@ protected:
     float pps;
     int timer;
 
-    void FindBestMove(bool& useHold, int& move);
-    int SimulateMove(Block& block, RotateState s, int posX);
-    void TryMoves(Block& firstBlock, Block& secondBlock, int& bestReward, int& bestMove);
+    // Cached result
+    bool cacheExists;
+    double cachedReward;
+    int cachedMove;
+    RotateState cachedRotation;
+
+    void FindBestMove(bool& useHold, int& bestMove, RotateState& bestRotation);
+    double SimulateMove(Block& block, RotateState s, int posX);
+    void TryMoves(Block& firstBlock, Block& secondBlock, double& bestReward, int& bestMove, RotateState& bestRotation);
 };
 
 #endif /* HEURISTICS_HPP */
