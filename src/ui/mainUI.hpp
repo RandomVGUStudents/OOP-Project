@@ -11,7 +11,7 @@ using namespace std;
 
 constexpr int BTN_COUNT = 3;
 enum CurrentPage { PLAY, WATCH, TRAIN };
-constexpr array<string, BTN_COUNT> btnString = {{ "PLAY", "WATCH", "TRAIN" }};
+constexpr array<string, BTN_COUNT> btnString = {{ "PLAY", "EVAL", "TRAIN" }};
 constexpr array<string, BTN_COUNT> pageTitle = {{ "GAME CONFIG", "AI CONFIG", "TRAIN CONFIG" }};
 
 constexpr int P1_SLIDER_COUNT = 4;
@@ -19,9 +19,9 @@ enum P1Slider { ARR, DAS, SDF, GRAVITY };
 constexpr array<string, P1_SLIDER_COUNT> p1SliderString = {{ "ARR", "DAS", "SDF", "GRAVITY" }};
 constexpr array<string, BTN_COUNT> p1BtnString = {{ "40 LINES", "BLITZ", "ZEN" }};
 
-constexpr int P2_SLIDER_COUNT = 2;
-enum P2Slider { PPS, REPEAT };
-constexpr array<string, P2_SLIDER_COUNT> p2SliderString = {{ "PPS", "REPEAT" }};
+constexpr int P2_SLIDER_COUNT = 3;
+enum P2Slider { PPS, REPEAT, GEN };
+constexpr array<string, P2_SLIDER_COUNT> p2SliderString = {{ "PPS", "REPEAT", "GEN." }};
 constexpr array<string, BTN_COUNT> p2BtnString = {{ "RUN GA", "GEN. ", "RUN RL" }};
 
 constexpr int P3_SLIDER_COUNT = 3;
@@ -58,11 +58,10 @@ public:
     void Draw(bool& canDrag);
 
 private:
-    bool sliding;
     float startVal;
     float endVal;
     float outputVal;
-
+    bool sliding;
 };
 
 
@@ -90,7 +89,7 @@ private:
     array<raylib::Vector2, P1_SLIDER_COUNT> p1TextPos;
     array<raylib::Vector2, BTN_COUNT> p1BtnTextPos;
 
-    // WatchPage elements
+    // EvalPage elements
     vector<Slider> p2Slider;
     array<raylib::Vector2, P2_SLIDER_COUNT> p2ValuePos;
     array<raylib::Vector2, P2_SLIDER_COUNT> p2TextPos;
@@ -113,7 +112,7 @@ private:
     void CalculateElements();
 
     void PlayPage();
-    void WatchPage();
+    void EvalPage();
     void TrainPage();
 };
 

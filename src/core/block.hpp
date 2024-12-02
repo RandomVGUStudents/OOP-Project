@@ -128,10 +128,11 @@ public:
     void Move(int x, int y);
 
     void ResetPosition();
+    void SetType(const BlockType& type);
     BlockType GetType()                             const;
     RotateState GetRotation()                       const;
     void GetPosition(int& posX, int& posY)          const;
-    const array<Coord, TETROMINO_SIZE>& GetCoords() const;
+    const array<Coord, TETROMINO_SIZE> GetCoords() const;
 
 private:
     BlockType blockType;

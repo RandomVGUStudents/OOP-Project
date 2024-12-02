@@ -3,9 +3,11 @@
 
 #include <atomic>
 #include <chrono>
+#include <filesystem>
 #include <format>
 #include <functional>
 #include <fstream>
+#include <regex>
 #include <set>
 #include <thread>
 
@@ -45,8 +47,8 @@ public:
     double totalScore = 0.0;
     bool isRunning = false;
 
-    double fitness = numeric_limits<float>::infinity();
     HeuristicsWeights chromosome;
+    double fitness = numeric_limits<float>::infinity();
 
     void CalculateFitness(
         int index,
@@ -56,7 +58,7 @@ public:
         bool& quitSignal
     );
     Individual Mate(Individual& partner);
-    const bool operator<(const Individual& compare);
+    bool operator<(const Individual& compare);
 };
 
 
@@ -65,6 +67,7 @@ class Trainer
 public:
     Trainer();
 
+    void LoadGeneration(int generation = -1);
     void StartTraining();
     bool ShouldStop();
     Individual& GetBestIndividual();

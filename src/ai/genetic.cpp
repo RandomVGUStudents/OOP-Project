@@ -1,4 +1,5 @@
 #include "genetic.hpp"
+#include <string>
 
 Individual::Individual()
     : chromosome({
@@ -38,7 +39,7 @@ Individual Individual::Mate(Individual& partner)
     return Individual(childChromosome);
 }
 
-const bool Individual::operator<(const Individual& compare)
+bool Individual::operator<(const Individual& compare)
 {
     return fitness < compare.fitness;
 }
@@ -61,17 +62,37 @@ void Individual::CalculateFitness(
     Start(index);
 
     game.UpdateHeuristics(chromosome);
+    game.NewGame();
 
     while (currentTrial < TRIALS_PER_GNOME && !quitSignal)
     {
         game.Update();
+        /*
+        gameWindow.BeginDrawing();
+        gameWindow.ClearBackground();
+        game.Draw(
+            "individual no.",
+            to_string(index),
+            format(" run {}/{}", currentTrial, TRIALS_PER_GNOME)
+        );
+        gameWindow.EndDrawing();
+        */
 
+        if (game.stats.droppedBlockCount % 100000 == 0)
+            cout << "Blocks count: " << game.stats.droppedBlockCount << " (PPS: "
+                << format("{:.2f}/s", game.stats.droppedBlockCount / game.stats.timeElapsed.count())
+                << ")" << endl;
         if (game.IsOver() || game.stats.clearedLineCount > MAX_LINES_PER_TRIAL)
         {
             currentTrial++;
             totalLines += game.stats.clearedLineCount;
             totalScore += game.stats.score;
 
+            cout << "Individual no. " << index << " (" << currentTrial << "/" << TRIALS_PER_GNOME << ")" << endl;
+            cout << "Line cleared: " << game.stats.clearedLineCount << endl;
+            cout << "Blocks count: " << game.stats.droppedBlockCount << " (PPS: "
+                << format("{:.2f}/s", game.stats.droppedBlockCount / game.stats.timeElapsed.count())
+                << ")" << endl << endl;
             game.NewGame();
         }
     }
@@ -85,7 +106,33 @@ void Individual::CalculateFitness(
 Trainer::Trainer()
     : games(POPULATION_SIZE)
 {
-    ifstream f(DATAFILE, ios::binary);
+    LoadGeneration();
+}
+
+void Trainer::LoadGeneration(int gen)
+{
+    if (gen == -1)
+    {
+        std::regex pattern(R"(gen_(\d+)\.bin)");
+
+        for (const auto& entry : std::filesystem::directory_iterator(std::filesystem::current_path()))
+        {
+            if (entry.is_regular_file()) {
+                std::string filename = entry.path().filename().string();
+                std::smatch match;
+
+                if (std::regex_match(filename, match, pattern)) {
+                    int number = std::stoi(match[1].str());
+                    if (number > gen)
+                        gen = number;
+                }
+            }
+        }
+
+        if (gen == -1) gen = 0;
+    }
+
+    ifstream f("gen_" + to_string(gen) + ".bin", ios::binary);
     if (f.is_open())
     {
         f.read(reinterpret_cast<char*>(&generation), sizeof(generation));
@@ -113,7 +160,26 @@ Trainer::Trainer()
 void Trainer::StartTraining()
 {
     quitSignal = false;
-    CreateThreadQueue();
+    //CreateThreadQueue();
+
+    for (size_t i = 0; i < POPULATION_SIZE; ++i)
+    {
+        std::function<void(const int)> startSignalFunc = [this](const int value) {
+            this->StartSignal(value);
+        };
+        std::function<void(const int)> endSignalFunc = [this](const int value) {
+            this->EndSignal(value);
+        };
+
+        population.at(i).CalculateFitness(
+            i,
+            games.at(i),
+            startSignalFunc,
+            endSignalFunc,
+            quitSignal
+        );
+    }
+    /*
 
     int counter = 0;
     while (finishedIndices.size() < POPULATION_SIZE)
@@ -137,6 +203,7 @@ void Trainer::StartTraining()
     }
 
     for (auto& thread : threads) if (thread.joinable()) thread.join();
+    */
 
     MatingPress();
     SaveData();
@@ -164,7 +231,7 @@ void Trainer::SetConfig(int thread, int generation)
 
 void Trainer::SaveData()
 {
-    ofstream f(DATAFILE, ios::binary);
+    ofstream f("gen_" + to_string(generation) + ".bin", ios::binary);
     if (!f.is_open()) return;
 
     f.write(reinterpret_cast<const char*>(&generation), sizeof(generation));
@@ -186,8 +253,10 @@ void Trainer::CreateThreadQueue()
     runningIndices.clear();
     finishedIndices.clear();
 
-    for (size_t i = 0; i < numThreads; ++i)
-        threads.emplace_back(&Trainer::StartFitness, this);
+    //for (size_t i = 0; i < numThreads; ++i)
+    //    threads.emplace_back(&Trainer::StartFitness, this);
+
+    StartFitness();
 }
 
 void Trainer::StartFitness()
@@ -203,9 +272,9 @@ void Trainer::StartFitness()
             this->EndSignal(value);
         };
 
-        population[index].CalculateFitness(
+        population.at(index).CalculateFitness(
             index,
-            games[index], 
+            games.at(index), 
             startSignalFunc,
             endSignalFunc,
             quitSignal
@@ -267,7 +336,7 @@ void Trainer::Print()
 
     for (const auto& index : runningIndices)
     {
-        const auto& individual = population[index];
+        const auto& individual = population.at(index);
         int trial = individual.currentTrial;
         double trialProgress = trial * 100.0 / TRIALS_PER_GNOME;
 
@@ -302,8 +371,8 @@ void Trainer::Render()
     gameWindow.BeginDrawing();
     gameWindow.ClearBackground();
 
-    const auto& individual = population[observeIndex];
-    games[observeIndex].Draw(
+    const auto& individual = population.at(observeIndex);
+    games.at(observeIndex).Draw(
         "individual no.",
         to_string(observeIndex),
         format(" run {}/{}", individual.currentTrial, TRIALS_PER_GNOME)

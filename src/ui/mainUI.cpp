@@ -103,7 +103,7 @@ void App::Loop()
             break;
 
         case WATCH:
-            WatchPage();
+            EvalPage();
             break;
 
         case TRAIN:
@@ -257,7 +257,11 @@ void App::CalculateElements()
                 break;
 
             case REPEAT:
-                p2Slider.push_back(std::move(Slider(1.0, 20.0)));
+                p2Slider.push_back(std::move(Slider(0.0, 20.0)));
+                break;
+
+            case GEN:
+                p2Slider.push_back(std::move(Slider(0.0, trainer.generation)));
                 break;
         }
 
@@ -389,14 +393,18 @@ void App::PlayPage()
             }
 }
 
-void App::WatchPage()
+void App::EvalPage()
 {
     static int runTimes = 0;
     static int repeatTimes = 0;
     if (isMainStarted)
     {
         tetrisAI.Update();
-        if (tetrisAI.IsOver() || runTimes >= repeatTimes) tetrisAI.NewGame();
+        if (tetrisAI.IsOver() && runTimes < repeatTimes)
+        {
+            runTimes++;
+            tetrisAI.NewGame();
+        }
         tetrisAI.Draw();
         return;
     }
@@ -442,6 +450,9 @@ void App::WatchPage()
                 isMainStarted = true;
                 float pps = p2Slider[PPS].GetValue();
                 repeatTimes = p2Slider[REPEAT].GetValue();
+                int generation = p2Slider[GEN].GetValue();
+
+                trainer.LoadGeneration(generation);
 
                 tetrisAI.SetPPS(pps == 20.0 ? 0 : pps);
                 tetrisAI.UpdateHeuristics(trainer.GetBestIndividual().chromosome);

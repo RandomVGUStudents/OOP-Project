@@ -36,6 +36,12 @@ void Block::ResetPosition()
     UpdateCoord();
 }
 
+void Block::SetType(const BlockType& type)
+{
+    blockType = type;
+    ResetPosition();
+}
+
 BlockType Block::GetType() const
 {
     return blockType;
@@ -52,7 +58,7 @@ void Block::GetPosition(int& x, int& y) const
     y = posY;
 }
 
-const array<Coord, TETROMINO_SIZE>& Block::GetCoords() const
+const array<Coord, TETROMINO_SIZE> Block::GetCoords() const
 {
     return coords;
 }

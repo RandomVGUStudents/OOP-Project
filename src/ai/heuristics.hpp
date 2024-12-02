@@ -6,8 +6,6 @@
 #include "ui/renderer.hpp"
 #include "env.hpp"
 
-constexpr string DATAFILE = "data.bin";
-
 class TetrisHeurAI : public TetrisEnv
 {
 public:
@@ -24,12 +22,6 @@ protected:
     TetrisRenderer renderer;
     float pps;
     int timer;
-
-    // Cached result
-    bool cacheExists;
-    double cachedReward;
-    int cachedMove;
-    RotateState cachedRotation;
 
     void FindBestMove(bool& useHold, int& bestMove, RotateState& bestRotation);
     double SimulateMove(Block& block, RotateState s, int posX);

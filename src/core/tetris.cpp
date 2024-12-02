@@ -6,22 +6,25 @@ TetrisCore::TetrisCore() : rng(rd())
     NewGame();
 }
 
-const bool TetrisCore::IsOver()
+bool TetrisCore::IsOver()
 {
     return gameOver;
 }
 
 void TetrisCore::HoldBlock()
 {
-    if (usedHold)
-        return;
+    if (usedHold) return;
 
-    if (holdBlock)
-        currentBag.push_front(holdBlock.GetType());
+    BlockType holdType = holdBlock.GetType();
 
-    currentBlock.ResetPosition();
-    holdBlock = std::move(currentBlock);
-    NextBlock();
+    holdBlock.SetType(currentBlock.GetType());
+
+    if (holdType != EMPTY)
+    {
+        currentBlock.SetType(holdType);
+        currentBlock.Move(holdType == O ? 4 : 3, 0);
+    }
+    else NextBlock();
 
     usedHold = true;
 }
@@ -32,13 +35,13 @@ void TetrisCore::GenerateBag()
     std::shuffle(vec.begin(), vec.end(), rng);
 
     for (int num : vec)
-        currentBag.push_back(BlockType(num));
+        currentBag.push_back((BlockType)num);
 }
 
 void TetrisCore::NextBlock()
 {
     auto& type = currentBag.front();
-    currentBlock = std::move(Block(type));
+    currentBlock.SetType(type);
     currentBlock.Move(type == O ? 4 : 3, 0);
 
     currentBag.pop_front();

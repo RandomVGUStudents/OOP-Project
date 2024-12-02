@@ -5,9 +5,9 @@ static float frametime = 0.0;
 TetrisUI::TetrisUI()
     : renderer(stats)
     , lineDropTimer(0)
-    , touchedDown(false)
-    , lockDownMove(0)
     , lockDownTimer(0)
+    , lockDownMove(0)
+    , touchedDown(false)
     , tSpinDetected(false)
     , isNormalTspin(false)
 {}
