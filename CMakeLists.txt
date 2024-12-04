@@ -22,7 +22,6 @@ set(SOURCES
     src/ui/mainUI.cpp
     src/ui/tetrisUI.cpp
     src/ui/renderer.cpp
-    src/ui/cli.cpp
     src/ai/env.cpp
     src/ai/heuristics.cpp
     src/ai/genetic.cpp

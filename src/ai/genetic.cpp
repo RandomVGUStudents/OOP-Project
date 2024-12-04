@@ -1,5 +1,4 @@
 #include "genetic.hpp"
-#include <string>
 
 Individual::Individual()
     : chromosome({
@@ -44,44 +43,36 @@ bool Individual::operator<(const Individual& compare)
     return fitness < compare.fitness;
 }
 
-void Individual::CalculateFitness(
-    int index,
-    TetrisHeurAI& game,
-    function<void(const int)>Start,
-    function<void(const int)>End,
-    bool& quitSignal
-)
+void Individual::CalculateFitness(TetrisHeurAI& game, int index, bool render)
 {
-    if (fitness != numeric_limits<float>::infinity())
-    {
-        End(index);
-        return;
-    }
+    if (fitness != numeric_limits<float>::infinity()) return;
 
     isRunning = true;
-    Start(index);
 
     game.UpdateHeuristics(chromosome);
     game.NewGame();
 
-    while (currentTrial < TRIALS_PER_GNOME && !quitSignal)
+    while (currentTrial < TRIALS_PER_GNOME)
     {
         game.Update();
-        /*
-        gameWindow.BeginDrawing();
-        gameWindow.ClearBackground();
-        game.Draw(
-            "individual no.",
-            to_string(index),
-            format(" run {}/{}", currentTrial, TRIALS_PER_GNOME)
-        );
-        gameWindow.EndDrawing();
-        */
 
-        if (game.stats.droppedBlockCount % 100000 == 0)
+        if (render)
+        {
+            gameWindow.BeginDrawing();
+            gameWindow.ClearBackground();
+            game.Draw(
+                "individual no.",
+                to_string(index),
+                format(" run {}/{}", currentTrial, TRIALS_PER_GNOME)
+            );
+            gameWindow.EndDrawing();
+        }
+
+        if (game.stats.droppedBlockCount % UPDATE_FREQ == 0)
             cout << "Blocks count: " << game.stats.droppedBlockCount << " (PPS: "
                 << format("{:.2f}/s", game.stats.droppedBlockCount / game.stats.timeElapsed.count())
                 << ")" << endl;
+
         if (game.IsOver() || game.stats.clearedLineCount > MAX_LINES_PER_TRIAL)
         {
             currentTrial++;
@@ -97,14 +88,13 @@ void Individual::CalculateFitness(
         }
     }
 
-    if (!quitSignal) fitness = TRIALS_PER_GNOME / (totalLines + totalScore * 0.01);
-    isRunning = false;
-    End(index);
+    fitness = TRIALS_PER_GNOME / (totalLines + totalScore * 0.01);
 }
 
 
 Trainer::Trainer()
     : games(POPULATION_SIZE)
+    , render(false)
 {
     LoadGeneration();
 }
@@ -157,53 +147,10 @@ void Trainer::LoadGeneration(int gen)
     else population = vector<Individual>(POPULATION_SIZE);
 }
 
-void Trainer::StartTraining()
+void Trainer::StartTraining(bool render)
 {
-    quitSignal = false;
-    //CreateThreadQueue();
-
     for (size_t i = 0; i < POPULATION_SIZE; ++i)
-    {
-        std::function<void(const int)> startSignalFunc = [this](const int value) {
-            this->StartSignal(value);
-        };
-        std::function<void(const int)> endSignalFunc = [this](const int value) {
-            this->EndSignal(value);
-        };
-
-        population.at(i).CalculateFitness(
-            i,
-            games.at(i),
-            startSignalFunc,
-            endSignalFunc,
-            quitSignal
-        );
-    }
-    /*
-
-    int counter = 0;
-    while (finishedIndices.size() < POPULATION_SIZE)
-    {
-        if (raylib::Keyboard::IsKeyPressed(KEY_ESCAPE) || gameWindow.ShouldClose())
-        {
-            quitSignal = true;
-            for (auto& thread : threads) if (thread.joinable()) thread.join();
-            return;
-        }
-
-        this_thread::sleep_for(chrono::milliseconds(GUI_UPDATE_FREQ));
-        Render();
-        counter++;
-
-        if (counter == GUI_PER_CLI)
-        {
-            Print();
-            counter = 0;
-        }
-    }
-
-    for (auto& thread : threads) if (thread.joinable()) thread.join();
-    */
+        population.at(i).CalculateFitness(games.at(i), i, render);
 
     MatingPress();
     SaveData();
@@ -211,22 +158,12 @@ void Trainer::StartTraining()
 
 bool Trainer::ShouldStop()
 {
-    bool stopCuzQuitSignal = quitSignal;
-    quitSignal = false;
-    return bestIndividual.fitness < CONVERGENT_FITNESS
-    || generation > maxGeneration
-    || stopCuzQuitSignal;
+    return bestIndividual.fitness < CONVERGENT_FITNESS || generation > MAX_GENERATION;
 }
 
 Individual& Trainer::GetBestIndividual()
 {
     return bestIndividual;
-}
-
-void Trainer::SetConfig(int thread, int generation)
-{
-    numThreads = thread;
-    maxGeneration = generation;
 }
 
 void Trainer::SaveData()
@@ -245,41 +182,6 @@ void Trainer::SaveData()
     }
 
     f.close();
-}
-
-void Trainer::CreateThreadQueue()
-{
-    indices = POPULATION_SIZE - 1;
-    runningIndices.clear();
-    finishedIndices.clear();
-
-    //for (size_t i = 0; i < numThreads; ++i)
-    //    threads.emplace_back(&Trainer::StartFitness, this);
-
-    StartFitness();
-}
-
-void Trainer::StartFitness()
-{
-    while(indices >= 0)
-    {
-        int index = indices.fetch_sub(1);
-
-        std::function<void(const int)> startSignalFunc = [this](const int value) {
-            this->StartSignal(value);
-        };
-        std::function<void(const int)> endSignalFunc = [this](const int value) {
-            this->EndSignal(value);
-        };
-
-        population.at(index).CalculateFitness(
-            index,
-            games.at(index), 
-            startSignalFunc,
-            endSignalFunc,
-            quitSignal
-        );
-    }
 }
 
 void Trainer::MatingPress()
@@ -303,93 +205,4 @@ void Trainer::MatingPress()
 
     population = offspring;
     generation++;
-}
-
-void Trainer::Print()
-{
-    cout << CLEAR_SCREEN;
-
-    double overallProgress = (POPULATION_SIZE * generation + finishedIndices.size()) * 100.0 / 
-        (POPULATION_SIZE * (maxGeneration + 1));
-    cout << createBox(
-        BOLD + "Overall Training Progress" + RESET,
-        CLI_GREEN + createProgressBar(overallProgress) + RESET
-    ) << endl << endl;
-
-    double genProgress = finishedIndices.size() * 100.0 / POPULATION_SIZE;
-    stringstream ss;
-    ss << BOLD << "Current Generation: " << generation << RESET;
-    ss << finishedIndices.size() << "/" << POPULATION_SIZE;
-
-    cout << createBox(ss.str(), CLI_BLUE + createProgressBar(genProgress) + RESET)
-        << endl << endl;
-
-    if (generation > 0)
-    {
-        stringstream fitnessStr;
-        fitnessStr << fixed << setprecision(10) << bestIndividual.fitness;
-        cout << createBox("Best Fitness", fitnessStr.str()) << endl << endl;
-    }
-
-    cout << BOLD << "Currently Running Individuals" << RESET << endl
-        << string(50, '-') << endl;
-
-    for (const auto& index : runningIndices)
-    {
-        const auto& individual = population.at(index);
-        int trial = individual.currentTrial;
-        double trialProgress = trial * 100.0 / TRIALS_PER_GNOME;
-
-        cout << left << (index == observeIndex ? CLI_RED : CLI_YELLOW)
-            << "Individual " << setw(3) << index << RESET
-
-            << createProgressBar(trialProgress, 20) << endl
-
-            << "Trial " << setw(10) 
-            << (to_string(trial) + "/" + to_string(TRIALS_PER_GNOME))
-            << "Lines: " << setw(10) 
-            << static_cast<int>(individual.totalLines)
-            << "Score: " 
-            << static_cast<int>(individual.totalScore)
-            << endl;
-
-        cout << string(50, '-') << endl;
-    }
-}
-
-void Trainer::Render()
-{
-    if (observeIndex == -1 || !population.at(observeIndex).isRunning)
-    {
-        int random = static_cast<int>(probabilityGen(rng) * runningIndices.size());
-        auto it = runningIndices.begin();
-        advance(it, random);
-
-        observeIndex = *it;
-    }
-
-    gameWindow.BeginDrawing();
-    gameWindow.ClearBackground();
-
-    const auto& individual = population.at(observeIndex);
-    games.at(observeIndex).Draw(
-        "individual no.",
-        to_string(observeIndex),
-        format(" run {}/{}", individual.currentTrial, TRIALS_PER_GNOME)
-    );
-
-    gameWindow.EndDrawing();
-}
-
-void Trainer::StartSignal(const int index)
-{
-    lock_guard<mutex> lock(mtx);
-    runningIndices.insert(index);
-}
-
-void Trainer::EndSignal(const int index)
-{
-    lock_guard<mutex> lock(mtx);
-    runningIndices.erase(index);
-    finishedIndices.insert(index);
 }

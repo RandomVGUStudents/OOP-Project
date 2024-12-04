@@ -22,12 +22,12 @@ constexpr array<string, BTN_COUNT> p1BtnString = {{ "40 LINES", "BLITZ", "ZEN" }
 constexpr int P2_SLIDER_COUNT = 3;
 enum P2Slider { PPS, REPEAT, GEN };
 constexpr array<string, P2_SLIDER_COUNT> p2SliderString = {{ "PPS", "REPEAT", "GEN." }};
-constexpr array<string, BTN_COUNT> p2BtnString = {{ "RUN GA", "GEN. ", "RUN RL" }};
+constexpr array<string, BTN_COUNT> p2BtnString = {{ "RUN GA", "CURRENT", "GEN. " }};
 
-constexpr int P3_SLIDER_COUNT = 3;
-enum P3Slider { GENERATION, THREADS, TIMESTEP };
-constexpr array<string, P3_SLIDER_COUNT> p3SliderString = {{ "GEN.", "THREADS", "STEPS" }};
-constexpr array<string, BTN_COUNT> p3BtnString = {{ "TRAIN GA", "GEN. ", "TRAIN RL" }};
+constexpr int P3_SLIDER_COUNT = 1;
+enum P3Slider { RENDER };
+constexpr array<string, P3_SLIDER_COUNT> p3SliderString = {{ "RENDER" }};
+constexpr array<string, BTN_COUNT> p3BtnString = {{ "TRAIN GA", "CURRENT", "GEN. " }};
 
 constexpr float TAB_BTN_SIZE = 0.3;
 constexpr float BTN_PADDING = (1 - TAB_BTN_SIZE * BTN_COUNT) / (BTN_COUNT + 1);
