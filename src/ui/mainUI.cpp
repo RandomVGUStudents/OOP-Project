@@ -89,12 +89,7 @@ void App::Loop()
             for (size_t i = 0; i < BTN_COUNT; ++i)
                 if (tabBtn[i].CheckCollision(mousePos)) currentPage = static_cast<CurrentPage>(i);
     }
-    else if (raylib::Keyboard::IsKeyPressed(KEY_ESCAPE))
-    {
-        isMainStarted = false;
-        tetrisGame.NewGame();
-        tetrisAI.NewGame();
-    }
+    else if (raylib::Keyboard::IsKeyPressed(KEY_ESCAPE)) isMainStarted = false;
 
     switch (currentPage)
     {
@@ -349,7 +344,7 @@ void App::PlayPage()
 
         if (val < 10.0) font.DrawText(format("{:.1f}", val), p1ValuePos[i], fontSize, 1.0, RAYWHITE);
         else if (i == SDF && val == 40.0) font.DrawText("INF", p1ValuePos[i], fontSize, 1.0, RAYWHITE);
-        else font.DrawText(format("{:.0f}", val), p1ValuePos[i], fontSize, 1.0, RAYWHITE);
+        else font.DrawText(format("{}", floor(val)), p1ValuePos[i], fontSize, 1.0, RAYWHITE);
     }
 
     for (size_t i = 0; i < BTN_COUNT; ++i)
@@ -389,15 +384,27 @@ void App::EvalPage()
 {
     static int runTimes = 0;
     static int repeatTimes = 0;
+    static float sumClearedLines = 0.0;
+    static float sumScore = 0.0;
+
     if (isMainStarted)
     {
         tetrisAI.Update();
-        if (tetrisAI.IsOver() && runTimes < repeatTimes)
+        tetrisAI.Draw(
+            "Avg. Score",
+            format("{:.1f}", sumScore / runTimes),
+            format("  lines: {:.1f}", sumClearedLines / runTimes)
+        );
+
+        if (tetrisAI.IsOver() && runTimes <= repeatTimes)
         {
             runTimes++;
-            tetrisAI.NewGame();
+            sumClearedLines += tetrisAI.stats.clearedLineCount;
+            sumScore += tetrisAI.stats.score;
+
+            if (runTimes <= repeatTimes) tetrisAI.NewGame();
         }
-        tetrisAI.Draw();
+
         return;
     }
 
@@ -411,9 +418,18 @@ void App::EvalPage()
 
         float val = p2Slider[i].GetValue();
 
-        if (val < 10.0) font.DrawText(format("{:.1f}", val), p2ValuePos[i], fontSize, 1.0, RAYWHITE);
-        else if (i == SDF && val == 40.0) font.DrawText("INF", p2ValuePos[i], fontSize, 1.0, RAYWHITE);
-        else font.DrawText(format("{:.0f}", val), p2ValuePos[i], fontSize, 1.0, RAYWHITE);
+        switch (i)
+        {
+            case PPS:
+                if (val < 10.0) font.DrawText(format("{:.1f}", val), p2ValuePos[i], fontSize, 1.0, RAYWHITE);
+                else if (val == 20.0) font.DrawText("INF", p2ValuePos[i], fontSize, 1.0, RAYWHITE);
+                else font.DrawText(format("{}", floor(val)), p2ValuePos[i], fontSize, 1.0, RAYWHITE);
+                break;
+
+            default:
+                font.DrawText(format("{}", floor(val)), p2ValuePos[i], fontSize, 1.0, RAYWHITE);
+                break;
+        }
     }
 
     for (size_t i = 0; i < BTN_COUNT; ++i)
@@ -440,6 +456,10 @@ void App::EvalPage()
         repeatTimes = p2Slider[REPEAT].GetValue();
         int generation = p2Slider[GEN].GetValue();
 
+        sumClearedLines = 0.0;
+        sumScore = 0.0;
+        runTimes = 0;
+
         trainer.LoadGeneration(generation);
 
         tetrisAI.SetPPS(pps == 20.0 ? 0 : pps);
@@ -453,6 +473,7 @@ void App::TrainPage()
     static bool render = false;
     if (isMainStarted)
     {
+        trainer.LoadGeneration(-1);
         while (!trainer.ShouldStop()) trainer.StartTraining(render);
         isMainStarted = false;
         return;

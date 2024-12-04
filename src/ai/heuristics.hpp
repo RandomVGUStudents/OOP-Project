@@ -19,9 +19,10 @@ public:
     void NewGame() override;
 
 protected:
-    TetrisRenderer renderer;
     float pps;
     int timer;
+
+    TetrisRenderer renderer;
 
     void FindBestMove(bool& useHold, int& bestMove, RotateState& bestRotation);
     double SimulateMove(Block& block, RotateState s, int posX);

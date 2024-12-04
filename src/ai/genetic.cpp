@@ -139,12 +139,16 @@ void Trainer::LoadGeneration(int gen)
             population.push_back(Individual(chromosome, fitness));
         }
 
-        sort(population.begin(), population.end());
-        bestIndividual = population.front();
-
         f.close();
     }
-    else population = vector<Individual>(POPULATION_SIZE);
+    else
+    {
+        generation = 0;
+        population = vector<Individual>(POPULATION_SIZE);
+    }
+
+    sort(population.begin(), population.end());
+    bestIndividual = population.front();
 }
 
 void Trainer::StartTraining(bool render)
