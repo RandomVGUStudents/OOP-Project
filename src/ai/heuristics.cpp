@@ -4,14 +4,12 @@ TetrisHeurAI::TetrisHeurAI()
     : renderer(stats, {{ SCORE, TIME, LINESPEED, BLOCKCOUNT, CUSTOM }})
     , pps(0.0)
     , timer(0)
-    , cacheExists(false)
-    , cachedReward(0.0)
-    , cachedMove(0)
-    , cachedRotation(INITIAL)
 {};
 
 void TetrisHeurAI::Update()
 {
+    if (gameOver) return;
+
     auto now = chrono::steady_clock::now();
     stats.timeElapsed = now - stats.startTime;
 
@@ -34,8 +32,7 @@ void TetrisHeurAI::Update()
 
     stats = origStats;
 
-    if (useHold)
-        HoldBlock();
+    if (useHold) HoldBlock();
 
     currentBlock.ResetPosition();
     MakeMove(rotation, move);
@@ -90,37 +87,16 @@ void TetrisHeurAI::FindBestMove(bool& useHold, int& bestMove, RotateState& bestR
     // -> The held piece + next piece > current piece + next piece ? hold : normal
 
     Block currentBlock = this->currentBlock;
-    Block nextBlock(currentBag[0]);
-    Block secondNextBlock(currentBag[1]);
+    Block nextBlock(currentBag.at(0));
+    Block secondNextBlock(currentBag.at(1));
     Block holdBlock = this->holdBlock;
     
-    if (!holdBlock)
-    {
-        // 2 piece lookahead, so it may become redundant => Pull from cached result
-        if (cacheExists)
-        {
-            bestRewardNoHold = cachedReward;
-            bestMoveNoHold = cachedMove;
-            bestRotationNoHold = cachedRotation;
-        }
-        else TryMoves(currentBlock, nextBlock, bestRewardNoHold, bestMoveNoHold, bestRotationNoHold);
-
-        if (nextBlock != secondNextBlock)
-        {
-            TryMoves(nextBlock, secondNextBlock, bestRewardHold, bestMoveHold, bestRotationHold);
-            
-            cacheExists = true;
-            cachedReward = bestRewardHold;
-            cachedMove = bestMoveHold;
-            cachedRotation = bestRotationHold;
-        }
-    }
-    else
-    {
-        TryMoves(currentBlock, nextBlock, bestRewardNoHold, bestMoveNoHold, bestRotationNoHold);
-        if (currentBlock != holdBlock)
-            TryMoves(holdBlock, nextBlock, bestRewardHold, bestMoveHold, bestRotationHold);
-    }
+    TryMoves(currentBlock, nextBlock, bestRewardNoHold, bestMoveNoHold, bestRotationNoHold);
+    if (!holdBlock && nextBlock != secondNextBlock)
+        TryMoves(nextBlock, secondNextBlock, bestRewardHold, bestMoveHold, bestRotationHold);
+    else if (holdBlock && currentBlock != holdBlock)
+        TryMoves(holdBlock, nextBlock, bestRewardHold, bestMoveHold, bestRotationHold);
+    
 
     if (bestRewardNoHold > bestRewardHold)
     {
@@ -162,7 +138,7 @@ void TetrisHeurAI::TryMoves(Block& firstBlock, Block& secondBlock, double& bestR
     int move = -1;
     RotateState rotation = INITIAL;
 
-    for (size_t i = 0; i < uniqueRotations[firstType]; ++i)
+    for (int i = 0; i < uniqueRotations.at(firstType); ++i)
     {
         const RotateState tryRotation = (RotateState)i;
         Board orig1 = board;
@@ -171,7 +147,7 @@ void TetrisHeurAI::TryMoves(Block& firstBlock, Block& secondBlock, double& bestR
         {
             double firstReward = SimulateMove(firstBlock, tryRotation, tryPosX);
 
-            for (size_t j = 0; j < uniqueRotations[secondType]; ++j)
+            for (int j = 0; j < uniqueRotations.at(secondType); ++j)
             {
                 const RotateState tryRotation2 = (RotateState)i;
                 Board orig2 = board;

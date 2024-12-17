@@ -89,12 +89,7 @@ void App::Loop()
             for (size_t i = 0; i < BTN_COUNT; ++i)
                 if (tabBtn[i].CheckCollision(mousePos)) currentPage = static_cast<CurrentPage>(i);
     }
-    else if (raylib::Keyboard::IsKeyPressed(KEY_ESCAPE))
-    {
-        isMainStarted = false;
-        tetrisGame.NewGame();
-        tetrisAI.NewGame();
-    }
+    else if (raylib::Keyboard::IsKeyPressed(KEY_ESCAPE)) isMainStarted = false;
 
     switch (currentPage)
     {
@@ -103,7 +98,7 @@ void App::Loop()
             break;
 
         case WATCH:
-            WatchPage();
+            EvalPage();
             break;
 
         case TRAIN:
@@ -176,7 +171,7 @@ void App::CalculateElements()
             pageBtn[i].GetY() + pageBtn[i].GetHeight() * 0.2
         );
 
-        string currentGen = (i == 1) ? to_string(trainer.generation) : "";
+        string currentGen = (i == 2) ? to_string(trainer.generation) : "";
 
         p2BtnTextPos[i] = raylib::Vector2(
             pageBtn[i].GetX() + (pageBtn[i].GetWidth() - font.MeasureText(p2BtnString[i] + currentGen, fontSize, 1.0).GetX()) / 2,
@@ -202,19 +197,19 @@ void App::CalculateElements()
         switch (i)
         {
             case ARR:
-                p1Slider.push_back(std::move(Slider(0.1, 5.0)));
+                p1Slider.push_back(Slider(0.1, 5.0));
                 break;
 
             case DAS:
-                p1Slider.push_back(std::move(Slider(1.0, 20.0)));
+                p1Slider.push_back(Slider(1.0, 20.0));
                 break;
 
             case SDF:
-                p1Slider.push_back(std::move(Slider(5.0, 40.0)));
+                p1Slider.push_back(Slider(5.0, 40.0));
                 break;
 
             case GRAVITY:
-                p1Slider.push_back(std::move(Slider(1.0 / 60, 1.0)));
+                p1Slider.push_back(Slider(1.0 / 60, 1.0));
                 break;
         }
 
@@ -253,11 +248,15 @@ void App::CalculateElements()
         switch (i)
         {
             case PPS:
-                p2Slider.push_back(std::move(Slider(1.0, 20.0)));
+                p2Slider.push_back(Slider(1.0, 20.0));
                 break;
 
             case REPEAT:
-                p2Slider.push_back(std::move(Slider(1.0, 20.0)));
+                p2Slider.push_back(Slider(0.0, 20.0));
+                break;
+
+            case GEN:
+                p2Slider.push_back(Slider(0.0, trainer.generation));
                 break;
         }
 
@@ -295,16 +294,8 @@ void App::CalculateElements()
 
         switch (i)
         {
-            case GENERATION:
-                p3Slider.push_back(std::move(Slider(0.0, 20.0)));
-                break;
-
-            case THREADS:
-                p3Slider.push_back(std::move(Slider(1.0, 8.0)));
-                break;
-
-            case TIMESTEP:
-                p3Slider.push_back(std::move(Slider(3e5, 1e6)));
+            case RENDER:
+                p3Slider.push_back(Slider(0.0, 1.0));
                 break;
         }
 
@@ -314,7 +305,7 @@ void App::CalculateElements()
         );
 
         p3Slider[i].sliderBar.SetPosition(
-            p3TextPos[i].GetX() + font.MeasureText(p3SliderString[THREADS], fontSize, 1.0).GetX() + horizontalPadding,
+            p3TextPos[i].GetX() + font.MeasureText(p3SliderString[RENDER], fontSize, 1.0).GetX() + horizontalPadding,
             p3TextPos[i].GetY() + (fontSize - canvas.GetHeight() * SLIDER_HEIGHT) / 4
         );
 
@@ -353,7 +344,7 @@ void App::PlayPage()
 
         if (val < 10.0) font.DrawText(format("{:.1f}", val), p1ValuePos[i], fontSize, 1.0, RAYWHITE);
         else if (i == SDF && val == 40.0) font.DrawText("INF", p1ValuePos[i], fontSize, 1.0, RAYWHITE);
-        else font.DrawText(format("{:.0f}", val), p1ValuePos[i], fontSize, 1.0, RAYWHITE);
+        else font.DrawText(format("{}", floor(val)), p1ValuePos[i], fontSize, 1.0, RAYWHITE);
     }
 
     for (size_t i = 0; i < BTN_COUNT; ++i)
@@ -389,15 +380,31 @@ void App::PlayPage()
             }
 }
 
-void App::WatchPage()
+void App::EvalPage()
 {
     static int runTimes = 0;
     static int repeatTimes = 0;
+    static float sumClearedLines = 0.0;
+    static float sumScore = 0.0;
+
     if (isMainStarted)
     {
         tetrisAI.Update();
-        if (tetrisAI.IsOver() || runTimes >= repeatTimes) tetrisAI.NewGame();
-        tetrisAI.Draw();
+        tetrisAI.Draw(
+            "Avg. Score",
+            format("{:.1f}", sumScore / runTimes),
+            format("  lines: {:.1f}", sumClearedLines / runTimes)
+        );
+
+        if (tetrisAI.IsOver() && runTimes <= repeatTimes)
+        {
+            runTimes++;
+            sumClearedLines += tetrisAI.stats.clearedLineCount;
+            sumScore += tetrisAI.stats.score;
+
+            if (runTimes <= repeatTimes) tetrisAI.NewGame();
+        }
+
         return;
     }
 
@@ -411,15 +418,24 @@ void App::WatchPage()
 
         float val = p2Slider[i].GetValue();
 
-        if (val < 10.0) font.DrawText(format("{:.1f}", val), p2ValuePos[i], fontSize, 1.0, RAYWHITE);
-        else if (i == SDF && val == 40.0) font.DrawText("INF", p2ValuePos[i], fontSize, 1.0, RAYWHITE);
-        else font.DrawText(format("{:.0f}", val), p2ValuePos[i], fontSize, 1.0, RAYWHITE);
+        switch (i)
+        {
+            case PPS:
+                if (val < 10.0) font.DrawText(format("{:.1f}", val), p2ValuePos[i], fontSize, 1.0, RAYWHITE);
+                else if (val == 20.0) font.DrawText("INF", p2ValuePos[i], fontSize, 1.0, RAYWHITE);
+                else font.DrawText(format("{}", floor(val)), p2ValuePos[i], fontSize, 1.0, RAYWHITE);
+                break;
+
+            default:
+                font.DrawText(format("{}", floor(val)), p2ValuePos[i], fontSize, 1.0, RAYWHITE);
+                break;
+        }
     }
 
     for (size_t i = 0; i < BTN_COUNT; ++i)
     {
         auto& btn = pageBtn[i];
-        string currentGen = (i == 1) ? to_string(trainer.generation) : "";
+        string currentGen = (i == 2) ? to_string(trainer.generation) : "";
 
         if (btn.CheckCollision(mousePos))
         {
@@ -433,27 +449,32 @@ void App::WatchPage()
         }
     }
 
-    if (raylib::Mouse::IsButtonPressed(MOUSE_BUTTON_LEFT))
-        for (size_t i = 0; i < BTN_COUNT; ++i)
-            if (pageBtn[i].CheckCollision(mousePos))
-            {
-                if (i == 1) return;
+    if (raylib::Mouse::IsButtonPressed(MOUSE_BUTTON_LEFT) && pageBtn[0].CheckCollision(mousePos))
+    {
+        isMainStarted = true;
+        float pps = p2Slider[PPS].GetValue();
+        repeatTimes = p2Slider[REPEAT].GetValue();
+        int generation = p2Slider[GEN].GetValue();
 
-                isMainStarted = true;
-                float pps = p2Slider[PPS].GetValue();
-                repeatTimes = p2Slider[REPEAT].GetValue();
+        sumClearedLines = 0.0;
+        sumScore = 0.0;
+        runTimes = 0;
 
-                tetrisAI.SetPPS(pps == 20.0 ? 0 : pps);
-                tetrisAI.UpdateHeuristics(trainer.GetBestIndividual().chromosome);
-                tetrisAI.NewGame();
-            }
+        trainer.LoadGeneration(generation);
+
+        tetrisAI.SetPPS(pps == 20.0 ? 0 : pps);
+        tetrisAI.UpdateHeuristics(trainer.GetBestIndividual().chromosome);
+        tetrisAI.NewGame();
+    }
 }
 
 void App::TrainPage()
 {
+    static bool render = false;
     if (isMainStarted)
     {
-        while (!trainer.ShouldStop()) trainer.StartTraining();
+        trainer.LoadGeneration(-1);
+        while (!trainer.ShouldStop()) trainer.StartTraining(render);
         isMainStarted = false;
         return;
     }
@@ -467,13 +488,19 @@ void App::TrainPage()
         font.DrawText(p3SliderString[i], p3TextPos[i], fontSize, 1.0, RAYWHITE);
 
         float val = p3Slider[i].GetValue();
-        font.DrawText(format("{:.0f}", val), p3ValuePos[i], fontSize, 1.0, RAYWHITE);
+
+        if (val < 0.5) font.DrawText("NO", p3ValuePos[i], fontSize, 1.0, RAYWHITE);
+        else
+        {
+            font.DrawText("YES", p3ValuePos[i], fontSize, 1.0, RAYWHITE);
+            render = true;
+        }
     }
 
     for (size_t i = 0; i < BTN_COUNT; ++i)
     {
         auto& btn = pageBtn[i];
-        string currentGen = (i == 1) ? to_string(trainer.generation) : "";
+        string currentGen = (i == 2) ? to_string(trainer.generation) : "";
 
         if (btn.CheckCollision(mousePos))
         {
@@ -487,22 +514,6 @@ void App::TrainPage()
         }
     }
 
-    if (raylib::Mouse::IsButtonPressed(MOUSE_BUTTON_LEFT))
-        for (size_t i = 0; i < BTN_COUNT; ++i)
-            if (pageBtn[i].CheckCollision(mousePos))
-            {
-                switch (i)
-                {
-                    case 0:
-                        isMainStarted = true;
-                        trainer.SetConfig(static_cast<int>(p3Slider[1].GetValue()), static_cast<int>(p3Slider[0].GetValue()));
-                        break;
-
-                    case 1:
-                        return;
-
-                    case 2:
-                        return;
-                }
-            }
+    if (raylib::Mouse::IsButtonPressed(MOUSE_BUTTON_LEFT) && pageBtn[0].CheckCollision(mousePos))
+        isMainStarted = true;
 }

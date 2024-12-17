@@ -265,14 +265,10 @@ void TetrisRenderer::DrawBoard(Block& currentBlock, int hardDropPos, Board& boar
     for (size_t i = 0; i < BOARD_WIDTH; ++i)
         for (size_t j = LINE_OFFSET; j < BOARD_HEIGHT; ++j)
         {
-            j -= LINE_OFFSET;
-
             mino.SetPosition(
                 holdBox.GetWidth() + canvas.GetX() + i * mino.GetWidth(),
-                canvas.GetY() + j * mino.GetHeight()
+                canvas.GetY() + (j - LINE_OFFSET) * mino.GetHeight()
             );
-
-            j += LINE_OFFSET;
 
             mino.DrawLines(DARKGRAY, 1.0);
             type = board.GetCell(i, j);
@@ -422,14 +418,10 @@ void TetrisRenderer::DrawGameOver(Board& board)
     for (size_t i = 0; i < BOARD_WIDTH; ++i)
         for (size_t j = LINE_OFFSET; j < BOARD_HEIGHT; ++j)
         {
-            j -= LINE_OFFSET;
-
             mino.SetPosition(
                 holdBox.GetWidth() + canvas.GetX() + i * mino.GetWidth(),
-                canvas.GetY() + j * mino.GetHeight()
+                canvas.GetY() + (j - LINE_OFFSET) * mino.GetHeight()
             );
-
-            j += LINE_OFFSET;
 
             mino.DrawLines(DARKGRAY, 1.0);
             if (board.GetCell(i, j) != EMPTY) minoTexture.Draw(textureCoords[EMPTY + 1], mino);

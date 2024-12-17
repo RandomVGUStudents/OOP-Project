@@ -15,7 +15,7 @@ public:
     GameStats stats;
 
     virtual void NewGame();
-    const bool IsOver();
+    bool IsOver();
 
 protected:
     Board board;
